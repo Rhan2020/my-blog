@@ -70,7 +70,6 @@ export default function PostPage() {
     <>
       <Header />
         <main className="max-w-2xl mx-auto py-10 px-4">
-          <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-foreground)' }}>{post.title}</h1>
           <div className="flex items-center gap-2 text-xs mb-4" style={{ color: 'var(--color-muted-foreground)' }}>
             <span>{new Date(post.date).toLocaleDateString()}</span>
             {post.tags && post.tags.length > 0 && (
@@ -86,7 +85,7 @@ export default function PostPage() {
           </div>
           <div className="mb-6" style={{ color: 'var(--color-muted)' }}>{post.description}</div>
           <article
-            className="prose max-w-none"
+            className="prose"
             dangerouslySetInnerHTML={{ __html: contentHtml }}
           />
           <div ref={(el) => {

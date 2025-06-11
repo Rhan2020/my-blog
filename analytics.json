@@ -1,0 +1,18 @@
+{
+  "pv": {
+    "simplify-project-architecture": 6,
+    "nextjs-cicd-cache-dependency-issues": 2
+  },
+  "uv": {
+    "simplify-project-architecture": {
+      "2025-06-11": {
+        "::1": true
+      }
+    },
+    "nextjs-cicd-cache-dependency-issues": {
+      "2025-06-11": {
+        "::1": true
+      }
+    }
+  }
+}

@@ -500,6 +500,13 @@ pre[class*="language-"] {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-primary);
 }
 
 .button-primary {
@@ -528,6 +535,30 @@ pre[class*="language-"] {
 
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out;
+}
+
+/* 隐藏 Next.js 开发工具菜单 */
+#__next-dev-overlay-error-toast,
+#__next-dev-overlay,
+#nextjs__container_errors_label,
+#nextjs__container_errors,
+#nextjs__container_build_error_label,
+#nextjs__container_build_error,
+#nextjs__container_runtime_error_label,
+#nextjs__container_runtime_error,
+[data-nextjs-toast],
+[data-nextjs-dialog],
+[data-nextjs-dialog-overlay],
+[data-nextjs-dev-overlay],
+#__next-dev-tools-menu,
+[id*="nextjs-dev-tools"],
+[class*="nextjs-dev-tools"],
+[data-dev-tools],
+[data-turbopack-dev] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* 打印样式 */
