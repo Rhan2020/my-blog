@@ -49,127 +49,16 @@ jobs:
             # 启动或重载应用
             pm2 reload my-blog || pm2 start npm --name "my-blog" -- start
 
-      - name: 配置 Nginx 代理 3000 端口 (修复只读挂载问题)
+      - name: 应用状态检查
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 43.139.236.77
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            echo "查找 Nginx 容器信息..."
-            NGINX_CONTAINER=$(docker ps --format '{{.Names}}' | grep -i nginx | head -n 1)
-            if [ -z "$NGINX_CONTAINER" ]; then
-              echo "未找到 Nginx 容器"
-              exit 1
-            fi
-            echo "找到 Nginx 容器: $NGINX_CONTAINER"
-            
-            # 直接在宿主机上找到挂载目录并修改配置
-            MOUNT_PATH=$(docker inspect $NGINX_CONTAINER | grep -A 10 "Mounts" | grep "Source" | grep -i "conf.d" | head -n 1 | awk -F'"' '{print $4}')
-            if [ -z "$MOUNT_PATH" ]; then
-              echo "未找到 Nginx 配置挂载点"
-              exit 1
-            fi
-            echo "找到挂载点: $MOUNT_PATH"
-            
-            # 在宿主机上创建配置文件
-            # 检查是否有 sudo 权限
-            if [ -w "$MOUNT_PATH" ]; then
-              echo "有权限写入挂载点"
-              # 直接在挂载目录写入配置
-              cat > "$MOUNT_PATH/my-blog.conf" << EOF
-            server {
-                listen 80;
-                server_name www.rshan.cc rshan.cc;
-            
-                location / {
-                    proxy_pass http://127.0.0.1:3000;
-                    proxy_set_header Host \$host;
-                    proxy_set_header X-Real-IP \$remote_addr;
-                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto \$scheme;
-                }
-            }
-            EOF
-              echo "配置文件已写入宿主机: $MOUNT_PATH/my-blog.conf"
-              
-              # 重启 Nginx 容器
-              docker restart $NGINX_CONTAINER
-              echo "已重启 Nginx 容器，配置应该已生效"
-            else
-              echo "没有权限写入挂载点，尝试使用 sudo"
-              echo "需要 sudo 权限写入 $MOUNT_PATH/my-blog.conf"
-              
-              # 尝试使用 sudo 写入
-              sudo tee "$MOUNT_PATH/my-blog.conf" > /dev/null << EOF
-            server {
-                listen 80;
-                server_name www.rshan.cc rshan.cc;
-            
-                location / {
-                    proxy_pass http://127.0.0.1:3000;
-                    proxy_set_header Host \$host;
-                    proxy_set_header X-Real-IP \$remote_addr;
-                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto \$scheme;
-                }
-            }
-            EOF
-              echo "使用 sudo 写入配置文件"
-              
-              # 重启 Nginx 容器
-              sudo docker restart $NGINX_CONTAINER
-              echo "已使用 sudo 重启 Nginx 容器，配置应该已生效"
-            fi
-            
-            # 等待几秒让 Nginx 重启
-            sleep 3
-            
-            # 确认 Nginx 容器状态
-            docker ps | grep -i nginx
-            
-            # 检查应用端口
-            echo "检查应用端口状态..."
-            netstat -tlnp | grep -E ':80|:3000' || echo "无法找到端口监听信息"
-            
-            # 测试访问应用
-            echo "测试访问应用..."
-            curl -I http://localhost || echo "无法访问 80 端口"
-            
-            # 测试 Nginx 配置语法
-            docker exec $NGINX_CONTAINER nginx -t || echo "Nginx 配置有语法错误"
-
-      - name: MCP 自动巡检
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: 43.139.236.77
-          username: ubuntu
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            echo "==== pm2 list ===="
+            echo "==== PM2 应用状态 ===="
             pm2 list
-            echo "==== lsof -i:3000 ===="
+            echo "==== 应用端口检查 ===="
             lsof -i:3000 || echo "端口 3000 未被监听"
-            echo "==== docker ps | grep nginx ===="
-            docker ps | grep -i nginx || echo "未找到 nginx 容器"
-            echo "==== nginx 容器挂载信息 ===="
-            NGINX_CONTAINER=$(docker ps --format '{{.Names}}' | grep -i nginx | head -n 1)
-            if [ -n "$NGINX_CONTAINER" ]; then
-              docker inspect $NGINX_CONTAINER | grep -A 15 "Mounts"
-              echo "==== nginx 容器端口映射 ===="
-              docker port $NGINX_CONTAINER
-              echo "==== nginx 配置检查 ===="
-              docker exec $NGINX_CONTAINER nginx -t
-              echo "==== 宿主机 nginx 配置文件列表 ===="
-              MOUNT_PATH=$(docker inspect $NGINX_CONTAINER | grep -A 10 "Mounts" | grep "Source" | grep -i "conf.d" | head -n 1 | awk -F'"' '{print $4}')
-              if [ -n "$MOUNT_PATH" ]; then
-                ls -la $MOUNT_PATH
-                echo "==== my-blog.conf 内容 ===="
-                cat $MOUNT_PATH/my-blog.conf || echo "找不到 my-blog.conf 文件"
-              fi
-            fi
-            echo "==== curl 本地测试 ===="
+            echo "==== 应用访问测试 ===="
             curl -I http://localhost:3000 || echo "无法访问 3000 端口"
-            curl -I http://localhost || echo "无法访问 80 端口"
-            echo "==== 本地 80 端口监听状态 ===="
-            netstat -tlnp | grep :80 || echo "80 端口未被监听"
