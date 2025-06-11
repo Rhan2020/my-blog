@@ -24,7 +24,7 @@ jobs:
         run: npm run build
 
       - name: Copy files to server via rsync over SSH
-        uses: burnett01/rsync-deployments@v1.0.13
+        uses: burnett01/rsync-deployments@7.0.2
         with:
           switches: -avzr --delete --exclude 'node_modules' --exclude '.git'
           path: ./*
