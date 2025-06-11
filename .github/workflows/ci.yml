@@ -50,6 +50,41 @@ jobs:
             pm2 start npm --name my-blog -- start -- --hostname 0.0.0.0 --port 3000
             pm2 save
 
+      - name: 配置 Nginx 代理 3000 端口
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 43.139.236.77
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # 自动查找 nginx 容器名
+            NGINX_CONTAINER=$(docker ps --format '{{.Names}}' | grep -i nginx | head -n 1)
+            if [ -z "$NGINX_CONTAINER" ]; then
+              echo "未找到 nginx 容器，尝试检查其他反向代理容器..."
+              PROXY_CONTAINER=$(docker ps --format '{{.Names}}' | grep -E '(proxy|traefik|haproxy)' | head -n 1)
+              if [ -z "$PROXY_CONTAINER" ]; then
+                echo "未找到任何反向代理容器，尝试安装 nginx..."
+                # 如果没有 nginx，尝试安装并启动
+                if ! command -v nginx > /dev/null; then
+                  sudo apt update
+                  sudo apt install -y nginx
+                fi
+                # 配置本地 nginx
+                sudo cp /home/ubuntu/my-blog/nginx-site.conf /etc/nginx/conf.d/my-blog.conf
+                sudo nginx -t && sudo nginx -s reload
+                echo "已配置本地 nginx"
+              else
+                echo "找到代理容器: $PROXY_CONTAINER，但暂不支持自动配置，请手动配置"
+              fi
+            else
+              echo "找到 nginx 容器: $NGINX_CONTAINER"
+              # 拷贝配置文件到容器
+              docker cp /home/ubuntu/my-blog/nginx-site.conf $NGINX_CONTAINER:/etc/nginx/conf.d/my-blog.conf
+              # reload nginx
+              docker exec $NGINX_CONTAINER nginx -t && docker exec $NGINX_CONTAINER nginx -s reload
+              echo "已配置 nginx 容器并重载"
+            fi
+
       - name: MCP自动巡检
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -63,3 +98,11 @@ jobs:
             lsof -i:3000
             echo "==== ls -l /home/ubuntu/my-blog ===="
             ls -l /home/ubuntu/my-blog
+            echo "==== docker ps | grep nginx ===="
+            docker ps | grep -i nginx || echo "未找到 nginx 容器"
+            echo "==== nginx 状态 ===="
+            if command -v nginx > /dev/null; then
+              sudo systemctl status nginx || echo "nginx 未运行"
+            else
+              echo "本机未安装 nginx"
+            fi
