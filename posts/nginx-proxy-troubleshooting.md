@@ -15,7 +15,7 @@ published: true
 
 明明两个请求指向相同的网站，为什么HTTPS就是不工作？
 
-![404错误](https://images.unsplash.com/photo-1624467892784-046ba27ea5bd?w=800&q=80)
+![404错误](https://images.unsplash.com/photo-1594498653385-d5172c532c00?w=800&q=80)
 
 ```bash
 # HTTP请求 - 正常
