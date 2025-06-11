@@ -50,7 +50,7 @@ jobs:
             pm2 start npm --name my-blog -- start -- --hostname 0.0.0.0 --port 3000
             pm2 save
 
-      - name: 配置 Nginx 代理 3000 端口
+      - name: 配置 Nginx 代理 3000 端口（只读容器处理方案）
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 43.139.236.77
@@ -78,11 +78,52 @@ jobs:
               fi
             else
               echo "找到 nginx 容器: $NGINX_CONTAINER"
-              # 拷贝配置文件到容器
-              docker cp /home/ubuntu/my-blog/nginx-site.conf $NGINX_CONTAINER:/etc/nginx/conf.d/my-blog.conf
-              # reload nginx
-              docker exec $NGINX_CONTAINER nginx -t && docker exec $NGINX_CONTAINER nginx -s reload
-              echo "已配置 nginx 容器并重载"
+              
+              # 尝试找出挂载卷
+              VOLUME_INFO=$(docker inspect $NGINX_CONTAINER | grep -A 10 "Mounts" | grep "Source" | head -n 1 | awk -F'"' '{print $4}')
+              NGINX_IMAGE=$(docker inspect $NGINX_CONTAINER --format '{{.Config.Image}}')
+              
+              if [ -n "$VOLUME_INFO" ]; then
+                echo "找到挂载点: $VOLUME_INFO"
+                # 查找配置目录
+                if [ -d "$VOLUME_INFO/conf.d" ]; then
+                  echo "找到配置目录: $VOLUME_INFO/conf.d"
+                  sudo cp /home/ubuntu/my-blog/nginx-site.conf $VOLUME_INFO/conf.d/my-blog.conf
+                  # 通知容器重载配置
+                  docker exec $NGINX_CONTAINER nginx -s reload || echo "重载失败，请检查配置路径"
+                  echo "已通过挂载卷配置 nginx"
+                else
+                  echo "在挂载卷中未找到 conf.d 目录，尝试重启容器..."
+                  # 替代方案：直接重启容器让它重新加载配置
+                  docker restart $NGINX_CONTAINER
+                  echo "已重启 nginx 容器，请确认配置是否生效"
+                fi
+              else
+                echo "无法找到挂载卷，尝试通过端口映射方式配置..."
+                # 查找端口映射
+                HOST_PORT=$(docker port $NGINX_CONTAINER | grep "80/tcp" | awk '{print $3}' | cut -d':' -f2)
+                if [ -n "$HOST_PORT" ]; then
+                  echo "找到 HTTP 端口映射: $HOST_PORT -> 80"
+                  # 在本地安装 socat 做端口转发
+                  if ! command -v socat > /dev/null; then
+                    sudo apt update
+                    sudo apt install -y socat
+                  fi
+                  
+                  # 设置从 80 端口转发到 3000
+                  echo "配置 socat 从 80/443 端口转发到 3000 端口"
+                  # 检查是否已有 socat 进程
+                  if pgrep -f "socat.*:3000" > /dev/null; then
+                    echo "socat 已经在运行，跳过配置"
+                  else
+                    # 后台启动 socat
+                    nohup socat TCP-LISTEN:80,fork TCP:127.0.0.1:3000 > /dev/null 2>&1 &
+                    echo "socat 转发已启动"
+                  fi
+                else
+                  echo "无法找到端口映射，请手动配置 nginx"
+                fi
+              fi
             fi
 
       - name: MCP自动巡检
@@ -95,14 +136,19 @@ jobs:
             echo "==== pm2 list ===="
             pm2 list
             echo "==== lsof -i:3000 ===="
-            lsof -i:3000
-            echo "==== ls -l /home/ubuntu/my-blog ===="
-            ls -l /home/ubuntu/my-blog
+            lsof -i:3000 || echo "端口 3000 未被监听"
             echo "==== docker ps | grep nginx ===="
             docker ps | grep -i nginx || echo "未找到 nginx 容器"
-            echo "==== nginx 状态 ===="
-            if command -v nginx > /dev/null; then
-              sudo systemctl status nginx || echo "nginx 未运行"
-            else
-              echo "本机未安装 nginx"
+            echo "==== nginx 容器挂载信息 ===="
+            NGINX_CONTAINER=$(docker ps --format '{{.Names}}' | grep -i nginx | head -n 1)
+            if [ -n "$NGINX_CONTAINER" ]; then
+              docker inspect $NGINX_CONTAINER | grep -A 15 "Mounts"
+              echo "==== nginx 容器端口映射 ===="
+              docker port $NGINX_CONTAINER
             fi
+            echo "==== socat 端口转发检查 ===="
+            ps aux | grep socat | grep -v grep || echo "未找到 socat 进程"
+            echo "==== curl 本地测试 ===="
+            curl -I http://localhost:3000 || echo "无法访问 3000 端口"
+            echo "==== 本地 80 端口监听状态 ===="
+            netstat -tlnp | grep :80 || echo "80 端口未被监听"
