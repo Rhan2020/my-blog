@@ -41,92 +41,100 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/ubuntu/my-blog
-            export PATH=$PATH:/home/ubuntu/.nvm/versions/node/v20.*/bin
-            npm install --omit=dev
-            if ! command -v pm2 > /dev/null; then npm install -g pm2; fi
-            if pm2 list | grep -q my-blog; then
-              pm2 delete my-blog
-            fi
-            pm2 start npm --name my-blog -- start -- --hostname 0.0.0.0 --port 3000
-            pm2 save
+            npm install -g pm2
+            pm2 reload my-blog || pm2 start npm --name "my-blog" -- start
 
-      - name: 配置 Nginx 代理 3000 端口（只读容器处理方案）
+      - name: 配置 Nginx 代理 3000 端口 (修复只读挂载问题)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 43.139.236.77
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # 自动查找 nginx 容器名
+            echo "查找 Nginx 容器信息..."
             NGINX_CONTAINER=$(docker ps --format '{{.Names}}' | grep -i nginx | head -n 1)
             if [ -z "$NGINX_CONTAINER" ]; then
-              echo "未找到 nginx 容器，尝试检查其他反向代理容器..."
-              PROXY_CONTAINER=$(docker ps --format '{{.Names}}' | grep -E '(proxy|traefik|haproxy)' | head -n 1)
-              if [ -z "$PROXY_CONTAINER" ]; then
-                echo "未找到任何反向代理容器，尝试安装 nginx..."
-                # 如果没有 nginx，尝试安装并启动
-                if ! command -v nginx > /dev/null; then
-                  sudo apt update
-                  sudo apt install -y nginx
-                fi
-                # 配置本地 nginx
-                sudo cp /home/ubuntu/my-blog/nginx-site.conf /etc/nginx/conf.d/my-blog.conf
-                sudo nginx -t && sudo nginx -s reload
-                echo "已配置本地 nginx"
-              else
-                echo "找到代理容器: $PROXY_CONTAINER，但暂不支持自动配置，请手动配置"
-              fi
-            else
-              echo "找到 nginx 容器: $NGINX_CONTAINER"
-              
-              # 尝试找出挂载卷
-              VOLUME_INFO=$(docker inspect $NGINX_CONTAINER | grep -A 10 "Mounts" | grep "Source" | head -n 1 | awk -F'"' '{print $4}')
-              NGINX_IMAGE=$(docker inspect $NGINX_CONTAINER --format '{{.Config.Image}}')
-              
-              if [ -n "$VOLUME_INFO" ]; then
-                echo "找到挂载点: $VOLUME_INFO"
-                # 查找配置目录
-                if [ -d "$VOLUME_INFO/conf.d" ]; then
-                  echo "找到配置目录: $VOLUME_INFO/conf.d"
-                  sudo cp /home/ubuntu/my-blog/nginx-site.conf $VOLUME_INFO/conf.d/my-blog.conf
-                  # 通知容器重载配置
-                  docker exec $NGINX_CONTAINER nginx -s reload || echo "重载失败，请检查配置路径"
-                  echo "已通过挂载卷配置 nginx"
-                else
-                  echo "在挂载卷中未找到 conf.d 目录，尝试重启容器..."
-                  # 替代方案：直接重启容器让它重新加载配置
-                  docker restart $NGINX_CONTAINER
-                  echo "已重启 nginx 容器，请确认配置是否生效"
-                fi
-              else
-                echo "无法找到挂载卷，尝试通过端口映射方式配置..."
-                # 查找端口映射
-                HOST_PORT=$(docker port $NGINX_CONTAINER | grep "80/tcp" | awk '{print $3}' | cut -d':' -f2)
-                if [ -n "$HOST_PORT" ]; then
-                  echo "找到 HTTP 端口映射: $HOST_PORT -> 80"
-                  # 在本地安装 socat 做端口转发
-                  if ! command -v socat > /dev/null; then
-                    sudo apt update
-                    sudo apt install -y socat
-                  fi
-                  
-                  # 设置从 80 端口转发到 3000
-                  echo "配置 socat 从 80/443 端口转发到 3000 端口"
-                  # 检查是否已有 socat 进程
-                  if pgrep -f "socat.*:3000" > /dev/null; then
-                    echo "socat 已经在运行，跳过配置"
-                  else
-                    # 后台启动 socat
-                    nohup socat TCP-LISTEN:80,fork TCP:127.0.0.1:3000 > /dev/null 2>&1 &
-                    echo "socat 转发已启动"
-                  fi
-                else
-                  echo "无法找到端口映射，请手动配置 nginx"
-                fi
-              fi
+              echo "未找到 Nginx 容器"
+              exit 1
             fi
+            echo "找到 Nginx 容器: $NGINX_CONTAINER"
+            
+            # 直接在宿主机上找到挂载目录并修改配置
+            MOUNT_PATH=$(docker inspect $NGINX_CONTAINER | grep -A 10 "Mounts" | grep "Source" | grep -i "conf.d" | head -n 1 | awk -F'"' '{print $4}')
+            if [ -z "$MOUNT_PATH" ]; then
+              echo "未找到 Nginx 配置挂载点"
+              exit 1
+            fi
+            echo "找到挂载点: $MOUNT_PATH"
+            
+            # 在宿主机上创建配置文件
+            # 检查是否有 sudo 权限
+            if [ -w "$MOUNT_PATH" ]; then
+              echo "有权限写入挂载点"
+              # 直接在挂载目录写入配置
+              cat > "$MOUNT_PATH/my-blog.conf" << EOF
+            server {
+                listen 80;
+                server_name www.rshan.cc rshan.cc;
+            
+                location / {
+                    proxy_pass http://127.0.0.1:3000;
+                    proxy_set_header Host \$host;
+                    proxy_set_header X-Real-IP \$remote_addr;
+                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto \$scheme;
+                }
+            }
+            EOF
+              echo "配置文件已写入宿主机: $MOUNT_PATH/my-blog.conf"
+              
+              # 重启 Nginx 容器
+              docker restart $NGINX_CONTAINER
+              echo "已重启 Nginx 容器，配置应该已生效"
+            else
+              echo "没有权限写入挂载点，尝试使用 sudo"
+              echo "需要 sudo 权限写入 $MOUNT_PATH/my-blog.conf"
+              
+              # 尝试使用 sudo 写入
+              sudo tee "$MOUNT_PATH/my-blog.conf" > /dev/null << EOF
+            server {
+                listen 80;
+                server_name www.rshan.cc rshan.cc;
+            
+                location / {
+                    proxy_pass http://127.0.0.1:3000;
+                    proxy_set_header Host \$host;
+                    proxy_set_header X-Real-IP \$remote_addr;
+                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto \$scheme;
+                }
+            }
+            EOF
+              echo "使用 sudo 写入配置文件"
+              
+              # 重启 Nginx 容器
+              sudo docker restart $NGINX_CONTAINER
+              echo "已使用 sudo 重启 Nginx 容器，配置应该已生效"
+            fi
+            
+            # 等待几秒让 Nginx 重启
+            sleep 3
+            
+            # 确认 Nginx 容器状态
+            docker ps | grep -i nginx
+            
+            # 检查应用端口
+            echo "检查应用端口状态..."
+            netstat -tlnp | grep -E ':80|:3000' || echo "无法找到端口监听信息"
+            
+            # 测试访问应用
+            echo "测试访问应用..."
+            curl -I http://localhost || echo "无法访问 80 端口"
+            
+            # 测试 Nginx 配置语法
+            docker exec $NGINX_CONTAINER nginx -t || echo "Nginx 配置有语法错误"
 
-      - name: MCP自动巡检
+      - name: MCP 自动巡检
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 43.139.236.77
@@ -145,10 +153,16 @@ jobs:
               docker inspect $NGINX_CONTAINER | grep -A 15 "Mounts"
               echo "==== nginx 容器端口映射 ===="
               docker port $NGINX_CONTAINER
+              echo "==== nginx 配置检查 ===="
+              docker exec $NGINX_CONTAINER nginx -t
+              echo "==== 宿主机 nginx 配置文件列表 ===="
+              MOUNT_PATH=$(docker inspect $NGINX_CONTAINER | grep -A 10 "Mounts" | grep "Source" | grep -i "conf.d" | head -n 1 | awk -F'"' '{print $4}')
+              if [ -n "$MOUNT_PATH" ]; then
+                ls -la $MOUNT_PATH
+              fi
             fi
-            echo "==== socat 端口转发检查 ===="
-            ps aux | grep socat | grep -v grep || echo "未找到 socat 进程"
             echo "==== curl 本地测试 ===="
             curl -I http://localhost:3000 || echo "无法访问 3000 端口"
+            curl -I http://localhost || echo "无法访问 80 端口"
             echo "==== 本地 80 端口监听状态 ===="
             netstat -tlnp | grep :80 || echo "80 端口未被监听"
