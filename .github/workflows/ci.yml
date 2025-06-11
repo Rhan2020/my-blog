@@ -1,0 +1,47 @@
+name: Deploy to Lighweight Cloud
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Copy files to server via rsync over SSH
+        uses: burnett01/rsync-deployments@v2.0.0
+        with:
+          switches: -avzr --delete --exclude 'node_modules' --exclude '.git'
+          path: ./*
+          remote_path: /home/ubuntu/my-blog
+          remote_host: 43.139.236.77
+          remote_user: ubuntu
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Install PM2 & Start/Reload Service
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 43.139.236.77
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/ubuntu/my-blog
+            export PATH=$PATH:/home/ubuntu/.nvm/versions/node/v20.*/bin
+            npm install --omit=dev
+            if ! command -v pm2 > /dev/null; then npm install -g pm2; fi
+            if pm2 list | grep -q my-blog; then pm2 reload my-blog; else pm2 start npm --name my-blog -- start; fi 
