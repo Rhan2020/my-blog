@@ -47,7 +47,9 @@ export default function PostPage() {
           tags: data.frontmatter.tags,
           content: data.content,
         });
-        const processed = await remark().use(gfm).use(html).process(data.content);
+        // 移除markdown内容中的第一个h1标题，避免重复显示
+        const contentWithoutH1 = data.content.replace(/^#\s+.*\n?/m, '');
+        const processed = await remark().use(gfm).use(html).process(contentWithoutH1);
         setContentHtml(processed.toString());
       })
       .catch(() => setNotFound(true));
@@ -70,6 +72,7 @@ export default function PostPage() {
     <>
       <Header />
         <main className="max-w-2xl mx-auto py-10 px-4">
+          <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-foreground)' }}>{post.title}</h1>
           <div className="flex items-center gap-2 text-xs mb-4" style={{ color: 'var(--color-muted-foreground)' }}>
             <span>{new Date(post.date).toLocaleDateString()}</span>
             {post.tags && post.tags.length > 0 && (
