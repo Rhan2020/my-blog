@@ -39,7 +39,7 @@ export default function Home() {
 
   return (
     <main className="max-w-2xl mx-auto py-10 px-4">
-      <h1 className="text-3xl font-bold mb-8 text-center">我的技术博客</h1>
+      <h1 className="text-3xl font-bold mb-8 text-center">rshan's blog</h1>
       <div className="space-y-6">
         {posts.map(post => (
           <Link

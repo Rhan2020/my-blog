@@ -1,4 +1,6 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# rshan's blog
+
+A technical blog built with [Next.js](https://nextjs.org), featuring articles about web development, DevOps, and system administration.
 
 ## Getting Started
 
