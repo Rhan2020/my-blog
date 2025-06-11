@@ -104,7 +104,7 @@ Certificate Name: ******.***
 
 SSL配置工作正常，问题就是缺少了代理转发配置。
 
-![调查过程](https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=800&q=80)
+![调查过程](https://images.unsplash.com/photo-1575089976121-8ed7b2a54265?w=800&q=80)
 
 ## 🔧 解决方案
 
@@ -249,7 +249,7 @@ curl -v https://******.***
 5. **应用处理**：Node.js应用处理请求并返回响应
 6. **代理返回**：Nginx将响应加密为HTTPS并返回给客户端
 
-![反向代理流程](https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&q=80)
+![反向代理流程](https://images.unsplash.com/photo-1573164713988-8665fc963095?w=800&q=80)
 
 ### HTTP vs HTTPS配置的关键差异
 
@@ -321,7 +321,7 @@ sudo rm /etc/nginx/sites-enabled/test
 sudo systemctl reload nginx
 ```
 
-![高级调试](https://images.unsplash.com/photo-1603899122634-f086ca5f5ddd?w=800&q=80)
+![高级调试](https://images.unsplash.com/photo-1623282033815-40b05d96c903?w=800&q=80)
 
 ## 📝 结论
 
