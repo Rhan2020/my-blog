@@ -33,6 +33,35 @@ jobs:
           remote_user: ubuntu
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+      - name: Install Dependencies and Build
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 43.139.236.77
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/ubuntu/my-blog
+            echo "==== 检查Node.js版本 ===="
+            node --version
+            npm --version
+            
+            echo "==== 安装/更新依赖 ===="
+            # 使用 npm ci 确保依赖版本一致，如果失败则降级到 npm install
+            npm ci --production=false || {
+              echo "npm ci 失败，尝试使用 npm install"
+              rm -rf node_modules package-lock.json
+              npm install
+            }
+            
+            echo "==== 清除构建缓存 ===="
+            rm -rf .next
+            
+            echo "==== 重新构建项目 ===="
+            npm run build
+            
+            echo "==== 构建完成，检查构建结果 ===="
+            ls -la .next/
+
       - name: Start/Reload PM2 Service
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -41,13 +70,27 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/ubuntu/my-blog
-            # 检查 PM2 是否已安装
+            echo "==== 检查 PM2 安装状态 ===="
             if ! command -v pm2 &> /dev/null; then
               echo "PM2 未安装，尝试使用 sudo 安装"
-              sudo npm install -g pm2 || echo "PM2 安装失败，但继续执行"
+              sudo npm install -g pm2 || {
+                echo "PM2 安装失败，尝试不使用 sudo"
+                npm install -g pm2
+              }
             fi
-            # 启动或重载应用
-            pm2 reload my-blog || pm2 start npm --name "my-blog" -- start
+            
+            echo "==== 停止现有应用（如果存在）===="
+            pm2 stop my-blog || echo "应用未运行或停止失败"
+            
+            echo "==== 启动应用 ===="
+            pm2 start npm --name "my-blog" -- start || {
+              echo "启动失败，检查错误日志"
+              pm2 logs my-blog --lines 10
+              exit 1
+            }
+            
+            echo "==== 等待应用启动 ===="
+            sleep 5
 
       - name: 应用状态检查
         uses: appleboy/ssh-action@v1.0.3
@@ -58,7 +101,30 @@ jobs:
           script: |
             echo "==== PM2 应用状态 ===="
             pm2 list
+            
+            echo "==== 应用详细信息 ===="
+            pm2 show my-blog || echo "无法获取应用详细信息"
+            
             echo "==== 应用端口检查 ===="
             lsof -i:3000 || echo "端口 3000 未被监听"
-            echo "==== 应用访问测试 ===="
-            curl -I http://localhost:3000 || echo "无法访问 3000 端口"
+            
+            echo "==== 最近的应用日志 ===="
+            pm2 logs my-blog --lines 20 --nostream || echo "无法获取日志"
+            
+            echo "==== HTTP 访问测试 ===="
+            for i in {1..3}; do
+              echo "尝试 $i/3..."
+              if curl -I http://localhost:3000; then
+                echo "HTTP 访问成功！"
+                break
+              else
+                echo "HTTP 访问失败，等待 3 秒后重试..."
+                sleep 3
+              fi
+            done
+            
+            echo "==== HTTPS 访问测试 ===="
+            curl -I https://rshan.cc || echo "HTTPS 访问失败"
+            
+            echo "==== 部署完成 ===="
+            echo "应用已成功部署并启动！"
