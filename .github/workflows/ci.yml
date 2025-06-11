@@ -49,3 +49,17 @@ jobs:
             fi
             pm2 start npm --name my-blog -- start -- --hostname 0.0.0.0 --port 3000
             pm2 save
+
+      - name: MCP自动巡检
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 43.139.236.77
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "==== pm2 list ===="
+            pm2 list
+            echo "==== lsof -i:3000 ===="
+            lsof -i:3000
+            echo "==== ls -l /home/ubuntu/my-blog ===="
+            ls -l /home/ubuntu/my-blog
