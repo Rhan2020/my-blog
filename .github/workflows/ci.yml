@@ -33,7 +33,7 @@ jobs:
           remote_user: ubuntu
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Install PM2 & Start/Reload Service
+      - name: Start/Reload PM2 Service
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 43.139.236.77
@@ -41,7 +41,12 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/ubuntu/my-blog
-            npm install -g pm2
+            # 检查 PM2 是否已安装
+            if ! command -v pm2 &> /dev/null; then
+              echo "PM2 未安装，尝试使用 sudo 安装"
+              sudo npm install -g pm2 || echo "PM2 安装失败，但继续执行"
+            fi
+            # 启动或重载应用
             pm2 reload my-blog || pm2 start npm --name "my-blog" -- start
 
       - name: 配置 Nginx 代理 3000 端口 (修复只读挂载问题)
@@ -159,6 +164,8 @@ jobs:
               MOUNT_PATH=$(docker inspect $NGINX_CONTAINER | grep -A 10 "Mounts" | grep "Source" | grep -i "conf.d" | head -n 1 | awk -F'"' '{print $4}')
               if [ -n "$MOUNT_PATH" ]; then
                 ls -la $MOUNT_PATH
+                echo "==== my-blog.conf 内容 ===="
+                cat $MOUNT_PATH/my-blog.conf || echo "找不到 my-blog.conf 文件"
               fi
             fi
             echo "==== curl 本地测试 ===="
