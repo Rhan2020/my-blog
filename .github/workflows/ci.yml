@@ -62,4 +62,4 @@ jobs:
             echo "==== lsof -i:3000 ===="
             lsof -i:3000
             echo "==== ls -l /home/ubuntu/my-blog ===="
-            ls -l /home/ubuntu/my-blog 
+            ls -l /home/ubuntu/my-blog
