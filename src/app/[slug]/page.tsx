@@ -56,13 +56,13 @@ export default function PostPage() {
   if (notFound) return (
     <>
       <Header />
-      <div className="max-w-2xl mx-auto py-10 px-4 text-center text-gray-400 dark:text-gray-500">文章未找到</div>
+      <div className="max-w-2xl mx-auto py-10 px-4 text-center" style={{ color: 'var(--color-muted)' }}>文章未找到</div>
     </>
   );
   if (!post) return (
     <>
       <Header />
-      <div className="max-w-2xl mx-auto py-10 px-4 text-center text-gray-400 dark:text-gray-500">加载中...</div>
+      <div className="max-w-2xl mx-auto py-10 px-4 text-center" style={{ color: 'var(--color-muted)' }}>加载中...</div>
     </>
   );
 
@@ -70,20 +70,23 @@ export default function PostPage() {
     <>
       <Header />
         <main className="max-w-2xl mx-auto py-10 px-4">
-          <h1 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">{post.title}</h1>
-          <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 mb-4">
+          <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-foreground)' }}>{post.title}</h1>
+          <div className="flex items-center gap-2 text-xs mb-4" style={{ color: 'var(--color-muted-foreground)' }}>
             <span>{new Date(post.date).toLocaleDateString()}</span>
             {post.tags && post.tags.length > 0 && (
               <span className="flex gap-1 flex-wrap">
                 {post.tags.map(tag => (
-                  <span key={tag} className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-gray-600 dark:text-gray-300">#{tag}</span>
+                  <span key={tag} className="px-2 py-0.5 rounded" style={{ 
+                    background: 'var(--color-secondary)', 
+                    color: 'var(--color-muted)' 
+                  }}>#{tag}</span>
                 ))}
               </span>
             )}
           </div>
-          <div className="text-gray-500 dark:text-gray-400 mb-6">{post.description}</div>
+          <div className="mb-6" style={{ color: 'var(--color-muted)' }}>{post.description}</div>
           <article
-            className="prose prose-neutral max-w-none dark:prose-invert"
+            className="prose max-w-none"
             dangerouslySetInnerHTML={{ __html: contentHtml }}
           />
           <div ref={(el) => {

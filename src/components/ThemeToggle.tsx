@@ -8,7 +8,12 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+      className="p-2 rounded-lg border transition-colors hover:opacity-80"
+      style={{ 
+        borderColor: 'var(--color-border)',
+        backgroundColor: 'var(--color-background)',
+        color: 'var(--color-foreground)'
+      }}
       aria-label={theme === 'light' ? '切换到暗夜模式' : '切换到亮色模式'}
     >
       {theme === 'light' ? (
