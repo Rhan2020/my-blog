@@ -1,7 +1,8 @@
 {
   "pv": {
-    "simplify-project-architecture": 6,
-    "nextjs-cicd-cache-dependency-issues": 2
+    "simplify-project-architecture": 24,
+    "nextjs-cicd-cache-dependency-issues": 2,
+    "nginx-proxy-troubleshooting": 2
   },
   "uv": {
     "simplify-project-architecture": {
@@ -10,6 +11,11 @@
       }
     },
     "nextjs-cicd-cache-dependency-issues": {
+      "2025-06-11": {
+        "::1": true
+      }
+    },
+    "nginx-proxy-troubleshooting": {
       "2025-06-11": {
         "::1": true
       }
