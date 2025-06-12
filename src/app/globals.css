@@ -1,277 +1,277 @@
 @import "tailwindcss";
 
-/* =================================
-   精美优雅的设计系统 - 白天/黑夜模式
-   ================================= */
-
-/* 现代优雅的字体堆栈 */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
-
-/* CSS 变量定义 - 精美配色方案 */
+/* CSS变量定义 - 参考GitHub、VS Code、Tailwind CSS等主流设计 */
 :root {
-  /* === 亮色主题 - 清新优雅 === */
-  --color-background: #fafbfc;
-  --color-surface: #ffffff;
-  --color-surface-elevated: #ffffff;
-  --color-foreground: #1a202c;
-  --color-foreground-muted: #4a5568;
-  --color-foreground-subtle: #718096;
-  
-  /* 主色调 - 现代蓝色系 */
-  --color-primary: #667eea;
-  --color-primary-hover: #5a6fd8;
-  --color-primary-light: #e6ebff;
+  /* Light theme colors */
+  --color-background: #ffffff;
+  --color-foreground: #1f2937;
+  --color-muted: #6b7280;
+  --color-muted-foreground: #9ca3af;
+  --color-card: #ffffff;
+  --color-card-foreground: #1f2937;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #1f2937;
+  --color-border: #e5e7eb;
+  --color-input: #e5e7eb;
+  --color-primary: #3b82f6;
   --color-primary-foreground: #ffffff;
-  
-  /* 次要色调 */
-  --color-secondary: #f7fafc;
-  --color-secondary-hover: #edf2f7;
-  --color-secondary-foreground: #2d3748;
-  
-  /* 强调色 */
-  --color-accent: #ed8936;
-  --color-accent-light: #fed7aa;
-  --color-accent-foreground: #ffffff;
-  
-  /* 语义色彩 */
-  --color-success: #48bb78;
-  --color-warning: #ed8936;
-  --color-error: #f56565;
-  --color-info: #4299e1;
-  
-  /* 边框和分割线 */
-  --color-border: #e2e8f0;
-  --color-border-hover: #cbd5e0;
-  --color-divider: #f1f5f9;
-  
-  /* 代码相关 */
+  --color-secondary: #f3f4f6;
+  --color-secondary-foreground: #1f2937;
+  --color-accent: #f3f4f6;
+  --color-accent-foreground: #1f2937;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-ring: #3b82f6;
   --color-code-bg: #f8fafc;
   --color-code-border: #e2e8f0;
-  --color-code-foreground: #2d3748;
+  --color-blockquote-border: #e5e7eb;
+  --color-table-header: #f9fafb;
+  --color-table-border: #e5e7eb;
   
-  /* 阴影系统 */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  /* Typography */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
   
-  /* 字体系统 */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Fira Code', Consolas, monospace;
-  
-  /* 渐变背景 */
-  --gradient-hero: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --gradient-card: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-  
-  /* 动画缓动 */
-  --ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
-  --ease-in-out-cubic: cubic-bezier(0.645, 0.045, 0.355, 1);
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
-/* === 暗色主题 - 深邃优雅 === */
+/* Dark theme colors - 参考GitHub Dark、VS Code Dark等 */
 .dark {
-  --color-background: #0f0f23;
-  --color-surface: #1a1a2e;
-  --color-surface-elevated: #16213e;
-  --color-foreground: #e2e8f0;
-  --color-foreground-muted: #a0aec0;
-  --color-foreground-subtle: #718096;
+  --color-background: #0d1117;
+  --color-foreground: #f0f6fc;
+  --color-muted: #8b949e;
+  --color-muted-foreground: #656d76;
+  --color-card: #161b22;
+  --color-card-foreground: #f0f6fc;
+  --color-popover: #161b22;
+  --color-popover-foreground: #f0f6fc;
+  --color-border: #30363d;
+  --color-input: #21262d;
+  --color-primary: #58a6ff;
+  --color-primary-foreground: #0d1117;
+  --color-secondary: #21262d;
+  --color-secondary-foreground: #f0f6fc;
+  --color-accent: #21262d;
+  --color-accent-foreground: #f0f6fc;
+  --color-destructive: #f85149;
+  --color-destructive-foreground: #f0f6fc;
+  --color-ring: #58a6ff;
+  --color-code-bg: #161b22;
+  --color-code-border: #30363d;
+  --color-blockquote-border: #30363d;
+  --color-table-header: #21262d;
+  --color-table-border: #30363d;
   
-  /* 主色调 - 优雅紫蓝色 */
-  --color-primary: #a78bfa;
-  --color-primary-hover: #9f7aea;
-  --color-primary-light: #322659;
-  --color-primary-foreground: #1a202c;
-  
-  /* 次要色调 */
-  --color-secondary: #2d3748;
-  --color-secondary-hover: #4a5568;
-  --color-secondary-foreground: #e2e8f0;
-  
-  /* 强调色 */
-  --color-accent: #fbb6ce;
-  --color-accent-light: #553c9a;
-  --color-accent-foreground: #1a202c;
-  
-  /* 语义色彩 */
-  --color-success: #68d391;
-  --color-warning: #fbb6ce;
-  --color-error: #fc8181;
-  --color-info: #63b3ed;
-  
-  /* 边框和分割线 */
-  --color-border: #2d3748;
-  --color-border-hover: #4a5568;
-  --color-divider: #1a1a2e;
-  
-  /* 代码相关 */
-  --color-code-bg: #1a1a2e;
-  --color-code-border: #2d3748;
-  --color-code-foreground: #e2e8f0;
-  
-  /* 暗色阴影 */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
-  
-  /* 暗色渐变 */
-  --gradient-hero: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --gradient-card: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+  /* Dark shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
 }
 
-/* =================================
-   全局重置和基础样式
-   ================================= */
-
+/* 全局样式 */
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html {
-  scroll-behavior: smooth;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  border-color: var(--color-border);
 }
 
 body {
-  font-family: var(--font-sans);
-  background: var(--color-background);
+  background-color: var(--color-background);
   color: var(--color-foreground);
-  line-height: 1.7;
-  font-weight: 400;
-  transition: all 0.3s var(--ease-out-cubic);
-  min-height: 100vh;
+  font-family: var(--font-sans);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  line-height: 1.6;
 }
 
-/* 优雅的文本选择样式 */
+/* 选择文本样式 */
 ::selection {
-  background: var(--color-primary);
+  background-color: var(--color-primary);
   color: var(--color-primary-foreground);
-  text-shadow: none;
 }
 
-/* 现代滚动条设计 */
+/* 滚动条样式 */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--color-background);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-foreground-subtle);
-  border-radius: 3px;
-  transition: background 0.2s ease;
+  background: var(--color-muted);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-foreground-muted);
+  background: var(--color-muted-foreground);
 }
 
-/* Firefox 滚动条 */
-html {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-foreground-subtle) transparent;
+/* Prism.js 代码高亮 - 参考GitHub Dark主题 */
+code[class*="language-"],
+pre[class*="language-"] {
+  color: #f0f6fc;
+  background: none;
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+  line-height: 1.5;
+  tab-size: 2;
+  hyphens: none;
 }
 
-/* =================================
-   优雅的排版系统
-   ================================= */
+pre[class*="language-"] {
+  padding: 1rem;
+  margin: 1rem 0;
+  overflow: auto;
+  border-radius: 8px;
+  background: var(--color-code-bg);
+  border: 1px solid var(--color-code-border);
+  box-shadow: var(--shadow-sm);
+}
 
+:not(pre) > code[class*="language-"] {
+  padding: 0.125rem 0.25rem;
+  border-radius: 4px;
+  white-space: normal;
+  background: var(--color-code-bg);
+  border: 1px solid var(--color-code-border);
+  color: var(--color-foreground);
+}
+
+/* Token colors - GitHub Dark inspired */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #8b949e;
+  font-style: italic;
+}
+
+.token.punctuation {
+  color: #f0f6fc;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #79c0ff;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #a5d6ff;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string,
+.token.variable {
+  color: #ff7b72;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.function,
+.token.class-name {
+  color: #d2a8ff;
+}
+
+.token.keyword {
+  color: #ff7b72;
+  font-weight: bold;
+}
+
+.token.regex,
+.token.important {
+  color: #ffa657;
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+/* Typography - Prose样式优化 */
 .prose {
   color: var(--color-foreground);
   max-width: none;
-  line-height: 1.75;
-  font-size: 1rem;
+  line-height: 1.7;
 }
 
-/* 标题层次设计 */
-.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
   color: var(--color-foreground);
-  font-weight: 600;
-  line-height: 1.3;
-  margin-top: 2.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-top: 2rem;
   margin-bottom: 1rem;
-  scroll-margin-top: 6rem;
-  letter-spacing: -0.025em;
+  scroll-margin-top: 2rem;
 }
 
 .prose h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
+  font-size: 2.25rem;
   margin-top: 0;
-  margin-bottom: 2rem;
-  background: var(--gradient-hero);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  position: relative;
-}
-
-.prose h1::after {
-  content: '';
-  position: absolute;
-  bottom: -0.5rem;
-  left: 0;
-  width: 3rem;
-  height: 3px;
-  background: var(--gradient-hero);
-  border-radius: 2px;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.5rem;
 }
 
 .prose h2 {
   font-size: 1.875rem;
-  margin-top: 3rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--color-border);
-  position: relative;
-}
-
-.prose h2::before {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 2rem;
-  height: 2px;
-  background: var(--color-primary);
-  border-radius: 1px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.3rem;
+  margin-bottom: 1rem;
 }
 
 .prose h3 {
   font-size: 1.5rem;
-  color: var(--color-primary);
 }
 
 .prose h4 {
   font-size: 1.25rem;
-  font-weight: 600;
 }
 
 .prose h5 {
   font-size: 1.125rem;
-  font-weight: 600;
 }
 
 .prose h6 {
   font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-foreground-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: var(--color-muted);
 }
 
-/* 段落和文本 */
 .prose p {
-  margin: 1.5rem 0;
-  color: var(--color-foreground-muted);
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
 }
 
 .prose strong {
@@ -280,399 +280,188 @@ html {
 }
 
 .prose em {
-  font-style: italic;
   color: var(--color-foreground);
+  font-style: italic;
 }
 
-/* 优雅的链接设计 */
 .prose a {
   color: var(--color-primary);
-  text-decoration: none;
-  font-weight: 500;
-  position: relative;
-  transition: all 0.2s var(--ease-out-cubic);
-}
-
-.prose a::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 0;
-  height: 2px;
-  background: var(--color-primary);
-  transition: width 0.3s var(--ease-out-cubic);
-}
-
-.prose a:hover::after {
-  width: 100%;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s ease;
 }
 
 .prose a:hover {
-  color: var(--color-primary-hover);
+  color: var(--color-primary);
+  text-decoration: none;
 }
-
-/* =================================
-   代码块美化
-   ================================= */
 
 .prose code {
   background: var(--color-code-bg);
-  color: var(--color-code-foreground);
-  padding: 0.25rem 0.5rem;
-  border-radius: 6px;
-  font-family: var(--font-mono);
+  color: var(--color-foreground);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
   font-size: 0.875em;
   font-weight: 500;
   border: 1px solid var(--color-code-border);
-  letter-spacing: -0.025em;
 }
 
 .prose pre {
   background: var(--color-code-bg);
-  border: 1px solid var(--color-code-border);
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin: 2rem 0;
+  color: var(--color-foreground);
+  border-radius: 8px;
+  padding: 1rem;
   overflow-x: auto;
-  position: relative;
+  margin: 1.5rem 0;
+  border: 1px solid var(--color-code-border);
   box-shadow: var(--shadow-sm);
-}
-
-.prose pre::before {
-  content: '';
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #ff5f57;
-  box-shadow: 20px 0 0 #ffbd2e, 40px 0 0 #28ca42;
 }
 
 .prose pre code {
   background: transparent;
-  border: none;
-  padding: 0;
-  font-size: 0.875em;
-  line-height: 1.6;
   color: inherit;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  border: none;
 }
-
-/* =================================
-   引用块优化
-   ================================= */
 
 .prose blockquote {
-  border-left: 4px solid var(--color-primary);
-  background: var(--gradient-card);
-  padding: 1.5rem 2rem;
-  margin: 2rem 0;
-  border-radius: 0 12px 12px 0;
+  border-left: 4px solid var(--color-blockquote-border);
+  padding-left: 1rem;
+  margin: 1.5rem 0;
   font-style: italic;
-  position: relative;
-  box-shadow: var(--shadow-sm);
-}
-
-.prose blockquote::before {
-  content: '"';
-  position: absolute;
-  top: -0.5rem;
-  left: 1rem;
-  font-size: 4rem;
-  color: var(--color-primary);
-  opacity: 0.3;
-  font-family: Georgia, serif;
+  color: var(--color-muted);
+  background: var(--color-secondary);
+  padding: 1rem 1rem 1rem 1.5rem;
+  border-radius: 0 8px 8px 0;
 }
 
 .prose blockquote p {
   margin: 0;
-  color: var(--color-foreground-muted);
-  font-size: 1.1em;
 }
 
-/* =================================
-   列表美化
-   ================================= */
-
-.prose ul, .prose ol {
-  margin: 1.5rem 0;
-  padding-left: 2rem;
+.prose ul,
+.prose ol {
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+  padding-left: 1.75rem;
 }
 
 .prose li {
-  margin: 0.75rem 0;
-  color: var(--color-foreground-muted);
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose li > p {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .prose ul > li {
   position: relative;
-  list-style: none;
 }
 
 .prose ul > li::before {
-  content: '';
+  content: "•";
   position: absolute;
-  left: -1.5rem;
-  top: 0.7rem;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-primary);
+  left: -1rem;
+  color: var(--color-muted);
+  font-weight: bold;
 }
 
 .prose ol > li {
-  list-style: none;
-  counter-increment: list-counter;
   position: relative;
 }
 
-.prose ol {
-  counter-reset: list-counter;
-}
-
-.prose ol > li::before {
-  content: counter(list-counter);
-  position: absolute;
-  left: -2rem;
-  top: 0;
-  background: var(--color-primary);
-  color: var(--color-primary-foreground);
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-/* =================================
-   表格优化
-   ================================= */
-
 .prose table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  margin: 2rem 0;
-  border-radius: 12px;
+  table-layout: auto;
+  text-align: left;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  border-collapse: collapse;
+  border: 1px solid var(--color-table-border);
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: var(--shadow-md);
-  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .prose table th {
-  background: var(--gradient-card);
+  background: var(--color-table-header);
   color: var(--color-foreground);
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1rem;
   font-weight: 600;
+  border-bottom: 1px solid var(--color-table-border);
   text-align: left;
-  border-bottom: 2px solid var(--color-border);
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .prose table td {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--color-border);
-  color: var(--color-foreground-muted);
-  vertical-align: top;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-table-border);
+  color: var(--color-foreground);
 }
 
-.prose table tr {
-  transition: background-color 0.2s ease;
-}
-
-.prose table tbody tr:hover {
-  background: var(--color-secondary);
+.prose table tr:hover {
+  background: var(--color-accent);
 }
 
 .prose table tr:last-child td {
   border-bottom: none;
 }
 
-/* =================================
-   图片和媒体
-   ================================= */
-
-.prose img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 12px;
-  box-shadow: var(--shadow-lg);
-  margin: 2rem auto;
-  display: block;
-  transition: transform 0.3s var(--ease-out-cubic);
-}
-
-.prose img:hover {
-  transform: scale(1.02);
-}
-
-/* =================================
-   分割线
-   ================================= */
-
 .prose hr {
   border: none;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
-  margin: 3rem 0;
-  position: relative;
+  background: var(--color-border);
+  margin: 2rem 0;
 }
 
-.prose hr::after {
-  content: '✦';
-  position: absolute;
-  top: -0.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--color-background);
-  color: var(--color-primary);
-  padding: 0 1rem;
-  font-size: 1rem;
+/* 图片样式 */
+.prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  margin: 1.5rem 0;
 }
 
-/* =================================
-   卡片组件优化
-   ================================= */
-
-.card {
-  background: var(--gradient-card);
+/* 键盘快捷键样式 */
+.prose kbd {
+  background: var(--color-secondary);
+  color: var(--color-foreground);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-size: 0.875em;
+  font-weight: 500;
   border: 1px solid var(--color-border);
-  border-radius: 16px;
-  padding: 1.5rem;
-  transition: all 0.3s var(--ease-out-cubic);
-  position: relative;
-  overflow: hidden;
   box-shadow: var(--shadow-sm);
 }
 
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--gradient-hero);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+/* 标记文本样式 */
+.prose mark {
+  background: #fbbf24;
+  color: #92400e;
+  padding: 0.125rem 0.25rem;
+  border-radius: 2px;
 }
 
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-xl);
-  border-color: var(--color-primary);
+.dark .prose mark {
+  background: #f59e0b;
+  color: #1f2937;
 }
 
-.card:hover::before {
-  opacity: 1;
-}
-
-/* =================================
-   按钮系统
-   ================================= */
-
-.button-primary {
-  background: var(--gradient-hero);
-  color: var(--color-primary-foreground);
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.875rem;
-  transition: all 0.2s var(--ease-out-cubic);
-  position: relative;
-  overflow: hidden;
-}
-
-.button-primary::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: left 0.5s ease;
-}
-
-.button-primary:hover::before {
-  left: 100%;
-}
-
-.button-secondary {
-  background: var(--color-secondary);
-  color: var(--color-secondary-foreground);
-  border: 1px solid var(--color-border);
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 0.875rem;
-  transition: all 0.2s var(--ease-out-cubic);
-}
-
-.button-secondary:hover {
-  background: var(--color-secondary-hover);
-  border-color: var(--color-border-hover);
-  transform: translateY(-1px);
-}
-
-/* =================================
-   动画系统
-   ================================= */
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-.animate-fadeInUp {
-  animation: fadeInUp 0.6s var(--ease-out-cubic) both;
-}
-
-.animate-fadeInScale {
-  animation: fadeInScale 0.4s var(--ease-out-cubic) both;
-}
-
-/* =================================
-   响应式设计
-   ================================= */
-
+/* 响应式设计 */
 @media (max-width: 768px) {
   .prose {
     font-size: 0.9rem;
   }
   
   .prose h1 {
-    font-size: 2rem;
+    font-size: 1.875rem;
   }
   
   .prose h2 {
@@ -684,98 +473,109 @@ html {
   }
   
   .prose pre {
-    padding: 1rem;
-    border-radius: 8px;
+    padding: 0.75rem;
+    margin: 1rem 0;
   }
   
-  .prose blockquote {
-    padding: 1rem 1.5rem;
+  .prose table {
+    font-size: 0.8rem;
   }
   
-  .card {
-    padding: 1rem;
-    border-radius: 12px;
+  .prose table th,
+  .prose table td {
+    padding: 0.5rem 0.75rem;
   }
 }
 
-/* =================================
-   无障碍和焦点样式
-   ================================= */
-
+/* 焦点样式 */
 *:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-button:focus-visible,
-a:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-ring);
   outline-offset: 2px;
 }
 
-/* =================================
-   特殊效果
-   ================================= */
-
-/* 渐变文本 */
-.gradient-text {
-  background: var(--gradient-hero);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+/* 自定义组件样式 */
+.card {
+  background: var(--color-card);
+  color: var(--color-card-foreground);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
 }
 
-/* 玻璃态效果 */
-.glass {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-primary);
 }
 
-.dark .glass {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.button-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  border: 1px solid var(--color-primary);
 }
 
-/* =================================
-   印刷样式
-   ================================= */
+.button-secondary {
+  background: var(--color-secondary);
+  color: var(--color-secondary-foreground);
+  border: 1px solid var(--color-border);
+}
 
-@media print {
-  * {
-    background: white !important;
-    color: black !important;
-    box-shadow: none !important;
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
-  
-  .prose {
-    font-size: 12pt;
-    line-height: 1.4;
-  }
-  
-  .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
-    page-break-after: avoid;
-    color: black !important;
-  }
-  
-  .prose pre, .prose blockquote {
-    page-break-inside: avoid;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* =================================
-   开发工具隐藏
-   ================================= */
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
 
+/* 隐藏 Next.js 开发工具菜单 */
 #__next-dev-overlay-error-toast,
 #__next-dev-overlay,
+#nextjs__container_errors_label,
+#nextjs__container_errors,
+#nextjs__container_build_error_label,
+#nextjs__container_build_error,
+#nextjs__container_runtime_error_label,
+#nextjs__container_runtime_error,
 [data-nextjs-toast],
 [data-nextjs-dialog],
 [data-nextjs-dialog-overlay],
-[data-nextjs-dev-overlay] {
+[data-nextjs-dev-overlay],
+#__next-dev-tools-menu,
+[id*="nextjs-dev-tools"],
+[class*="nextjs-dev-tools"],
+[data-dev-tools],
+[data-turbopack-dev] {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
+}
+
+/* 打印样式 */
+@media print {
+  .prose {
+    color: black;
+  }
+  
+  .prose pre,
+  .prose code {
+    background: #f5f5f5;
+    color: black;
+    border: 1px solid #ddd;
+  }
+  
+  .prose blockquote {
+    border-left-color: #ddd;
+    background: #f9f9f9;
+  }
 }
