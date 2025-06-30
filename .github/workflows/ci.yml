@@ -16,24 +16,52 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
 
-      - name: Install dependencies
-        run: npm install
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies (with cache)
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
 
       - name: Build project
         run: npm run build
 
+      - name: Generate package.json MD5
+        run: |
+          echo "PACKAGE_JSON_MD5=$(md5sum package.json | cut -d' ' -f1)" >> $GITHUB_ENV
+          echo "Package.json MD5: $(md5sum package.json | cut -d' ' -f1)"
+
       - name: Copy files to server via rsync over SSH
         uses: burnett01/rsync-deployments@7.0.2
         with:
-          switches: -avzr --delete --exclude 'node_modules' --exclude '.git'
+          switches: -avzr --delete --exclude 'node_modules' --exclude '.git' --exclude '.github' --exclude '.next/cache'
           path: ./*
           remote_path: /home/ubuntu/my-blog
           remote_host: 43.139.236.77
           remote_user: ubuntu
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Install Dependencies and Build
+      - name: Smart Dependencies Installation and Build
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 43.139.236.77
@@ -41,28 +69,103 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/ubuntu/my-blog
+            
             echo "==== 检查Node.js版本 ===="
             node --version
             npm --version
             
-            echo "==== 安装/更新依赖 ===="
-            # 使用 npm ci 确保依赖版本一致，如果失败则降级到 npm install
-            npm ci --production=false || {
-              echo "npm ci 失败，尝试使用 npm install"
-              rm -rf node_modules package-lock.json
-              npm install
-            }
+            # 检查package.json是否变更
+            CURRENT_MD5="${{ env.PACKAGE_JSON_MD5 }}"
+            CACHE_FILE="/home/ubuntu/.my-blog-package-cache"
+            NEED_INSTALL=false
             
-            echo "==== 清除构建缓存 ===="
-            rm -rf .next
+            echo "==== 检查依赖是否需要更新 ===="
+            if [ -f "$CACHE_FILE" ]; then
+              CACHED_MD5=$(cat "$CACHE_FILE")
+              echo "缓存的MD5: $CACHED_MD5"
+              echo "当前的MD5: $CURRENT_MD5"
+              
+              if [ "$CACHED_MD5" != "$CURRENT_MD5" ]; then
+                echo "package.json已变更，需要重新安装依赖"
+                NEED_INSTALL=true
+              else
+                echo "package.json未变更，跳过依赖安装"
+                NEED_INSTALL=false
+              fi
+            else
+              echo "未找到缓存文件，首次安装依赖"
+              NEED_INSTALL=true
+            fi
             
-            echo "==== 重新构建项目 ===="
-            npm run build
+            # 检查node_modules是否存在
+            if [ ! -d "node_modules" ]; then
+              echo "node_modules目录不存在，需要安装依赖"
+              NEED_INSTALL=true
+            fi
+            
+            # 安装或跳过依赖
+            if [ "$NEED_INSTALL" = true ]; then
+              echo "==== 安装/更新依赖 ===="
+              # 清理旧的依赖
+              rm -rf node_modules package-lock.json 2>/dev/null || true
+              
+              # 使用npm install进行全新安装
+              if npm install --production=false; then
+                echo "依赖安装成功"
+                # 保存MD5到缓存文件
+                echo "$CURRENT_MD5" > "$CACHE_FILE"
+              else
+                echo "依赖安装失败，退出"
+                exit 1
+              fi
+            else
+              echo "==== 跳过依赖安装 ===="
+              echo "依赖未变更，使用现有依赖"
+            fi
+            
+            echo "==== 检查是否需要重新构建 ===="
+            BUILD_NEEDED=false
+            
+            # 检查.next目录是否存在
+            if [ ! -d ".next" ]; then
+              echo ".next目录不存在，需要构建"
+              BUILD_NEEDED=true
+            elif [ "$NEED_INSTALL" = true ]; then
+              echo "依赖已更新，需要重新构建"
+              BUILD_NEEDED=true
+            else
+              echo "检查源码是否有变更..."
+              # 可以通过其他方式检查源码变更，这里简化为检查.next目录年龄
+              if find src app posts -newer .next 2>/dev/null | head -1 | grep -q .; then
+                echo "发现源码变更，需要重新构建"
+                BUILD_NEEDED=true
+              else
+                echo "未发现源码变更，尝试重用构建结果"
+                BUILD_NEEDED=false
+              fi
+            fi
+            
+            if [ "$BUILD_NEEDED" = true ]; then
+              echo "==== 重新构建项目 ===="
+              # 只清除构建产物，保留缓存
+              rm -rf .next/static .next/server 2>/dev/null || true
+              
+              if npm run build; then
+                echo "构建成功"
+              else
+                echo "构建失败，清除缓存后重试"
+                rm -rf .next
+                npm run build
+              fi
+            else
+              echo "==== 跳过构建 ===="
+              echo "使用现有构建结果"
+            fi
             
             echo "==== 构建完成，检查构建结果 ===="
-            ls -la .next/
+            ls -la .next/ 2>/dev/null || echo ".next目录内容检查失败"
 
-      - name: Start/Reload PM2 Service
+      - name: Smart PM2 Service Management
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 43.139.236.77
@@ -70,27 +173,37 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/ubuntu/my-blog
+            
             echo "==== 检查 PM2 安装状态 ===="
             if ! command -v pm2 &> /dev/null; then
-              echo "PM2 未安装，尝试使用 sudo 安装"
-              sudo npm install -g pm2 || {
-                echo "PM2 安装失败，尝试不使用 sudo"
-                npm install -g pm2
-              }
+              echo "PM2 未安装，尝试安装"
+              if npm install -g pm2; then
+                echo "PM2 安装成功"
+              else
+                echo "PM2 安装失败，尝试使用 sudo"
+                sudo npm install -g pm2
+              fi
             fi
             
-            echo "==== 停止现有应用（如果存在）===="
-            pm2 stop my-blog || echo "应用未运行或停止失败"
+            echo "==== 智能重启应用 ===="
+            if pm2 show my-blog > /dev/null 2>&1; then
+              echo "应用已存在，执行重载"
+              if pm2 reload my-blog; then
+                echo "应用重载成功"
+              else
+                echo "重载失败，尝试重启"
+                pm2 restart my-blog
+              fi
+            else
+              echo "应用不存在，启动新应用"
+              pm2 start npm --name "my-blog" -- start
+            fi
             
-            echo "==== 启动应用 ===="
-            pm2 start npm --name "my-blog" -- start || {
-              echo "启动失败，检查错误日志"
-              pm2 logs my-blog --lines 10
-              exit 1
-            }
-            
-            echo "==== 等待应用启动 ===="
+            echo "==== 等待应用稳定 ===="
             sleep 5
+            
+            # 保存PM2配置
+            pm2 save > /dev/null 2>&1 || echo "PM2配置保存失败"
 
       - name: 应用状态检查
         uses: appleboy/ssh-action@v1.0.3
@@ -102,29 +215,44 @@ jobs:
             echo "==== PM2 应用状态 ===="
             pm2 list
             
-            echo "==== 应用详细信息 ===="
-            pm2 show my-blog || echo "无法获取应用详细信息"
-            
             echo "==== 应用端口检查 ===="
-            lsof -i:3000 || echo "端口 3000 未被监听"
-            
-            echo "==== 最近的应用日志 ===="
-            pm2 logs my-blog --lines 20 --nostream || echo "无法获取日志"
+            if lsof -i:3000 > /dev/null 2>&1; then
+              echo "✅ 端口 3000 正常监听"
+            else
+              echo "❌ 端口 3000 未被监听"
+              pm2 logs my-blog --lines 10
+              exit 1
+            fi
             
             echo "==== HTTP 访问测试 ===="
             for i in {1..3}; do
               echo "尝试 $i/3..."
-              if curl -I http://localhost:3000; then
-                echo "HTTP 访问成功！"
+              if curl -f -s -I http://localhost:3000 > /dev/null; then
+                echo "✅ HTTP 访问成功！"
                 break
               else
-                echo "HTTP 访问失败，等待 3 秒后重试..."
+                echo "❌ HTTP 访问失败，等待 3 秒后重试..."
+                if [ $i -eq 3 ]; then
+                  echo "HTTP访问最终失败，查看日志："
+                  pm2 logs my-blog --lines 20
+                  exit 1
+                fi
                 sleep 3
               fi
             done
             
             echo "==== HTTPS 访问测试 ===="
-            curl -I https://rshan.cc || echo "HTTPS 访问失败"
+            if curl -f -s -I https://rshan.cc > /dev/null; then
+              echo "✅ HTTPS 访问成功！"
+            else
+              echo "⚠️ HTTPS 访问失败（可能是SSL配置问题）"
+            fi
             
             echo "==== 部署完成 ===="
-            echo "应用已成功部署并启动！"
+            echo "🎉 应用已成功部署并启动！"
+            
+            # 显示缓存状态
+            CACHE_FILE="/home/ubuntu/.my-blog-package-cache"
+            if [ -f "$CACHE_FILE" ]; then
+              echo "📦 当前依赖缓存MD5: $(cat $CACHE_FILE)"
+            fi
