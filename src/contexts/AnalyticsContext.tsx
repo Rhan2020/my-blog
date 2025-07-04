@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface Analytics {
   pv: number;
@@ -13,9 +13,17 @@ interface AnalyticsContextType {
 
 // 生成随机的PV/UV数据
 const generateRandomStats = () => {
+  // 先生成访客数(UV)，范围1-80
+  const uv = Math.floor(Math.random() * 80) + 1;
+  
+  // 基于访客数生成阅读量(PV)，确保PV >= UV
+  // 每个访客平均阅读1-3篇文章
+  const readingMultiplier = 1 + Math.random() * 2; // 1.0 - 3.0之间
+  const pv = Math.floor(uv * readingMultiplier);
+  
   return {
-    pv: Math.floor(Math.random() * 200) + 1,
-    uv: Math.floor(Math.random() * 100) + 1
+    pv: pv,
+    uv: uv
   };
 };
 
@@ -31,7 +39,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
 
   // 根据slug生成或更新统计数据
   const incrementAnalytics = (slug: string) => {
-    setAnalytics(prev => {
+    setAnalytics((prev: Record<string, Analytics>) => {
       // 如果已有数据，则增加阅读量
       if (prev[slug]) {
         return {
