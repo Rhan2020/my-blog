@@ -1,32 +1,33 @@
 @import "tailwindcss";
 
-/* CSS变量定义 - 参考GitHub、VS Code、Tailwind CSS等主流设计 */
+/* 现代设计的CSS变量 */
 :root {
-  /* Light theme colors */
+  /* Light theme colors - 更现代的配色方案 */
   --color-background: #ffffff;
-  --color-foreground: #1f2937;
-  --color-muted: #6b7280;
-  --color-muted-foreground: #9ca3af;
-  --color-card: #ffffff;
-  --color-card-foreground: #1f2937;
+  --color-background-rgb: 255, 255, 255;
+  --color-foreground: #18181b;
+  --color-muted: #71717a;
+  --color-muted-foreground: #a1a1aa;
+  --color-card: #fafafa;
+  --color-card-foreground: #18181b;
   --color-popover: #ffffff;
-  --color-popover-foreground: #1f2937;
-  --color-border: #e5e7eb;
-  --color-input: #e5e7eb;
+  --color-popover-foreground: #18181b;
+  --color-border: #e4e4e7;
+  --color-input: #e4e4e7;
   --color-primary: #3b82f6;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #f3f4f6;
-  --color-secondary-foreground: #1f2937;
-  --color-accent: #f3f4f6;
-  --color-accent-foreground: #1f2937;
+  --color-secondary: #f4f4f5;
+  --color-secondary-foreground: #18181b;
+  --color-accent: #f4f4f5;
+  --color-accent-foreground: #18181b;
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
   --color-ring: #3b82f6;
   --color-code-bg: #f8fafc;
   --color-code-border: #e2e8f0;
-  --color-blockquote-border: #e5e7eb;
+  --color-blockquote-border: #e4e4e7;
   --color-table-header: #f9fafb;
-  --color-table-border: #e5e7eb;
+  --color-table-border: #e4e4e7;
   
   /* Typography */
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
@@ -38,32 +39,33 @@
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
-/* Dark theme colors - 参考GitHub Dark、VS Code Dark等 */
+/* Dark theme colors - 更现代的深色模式 */
 .dark {
-  --color-background: #0d1117;
-  --color-foreground: #f0f6fc;
-  --color-muted: #8b949e;
-  --color-muted-foreground: #656d76;
-  --color-card: #161b22;
-  --color-card-foreground: #f0f6fc;
-  --color-popover: #161b22;
-  --color-popover-foreground: #f0f6fc;
-  --color-border: #30363d;
-  --color-input: #21262d;
-  --color-primary: #58a6ff;
-  --color-primary-foreground: #0d1117;
-  --color-secondary: #21262d;
-  --color-secondary-foreground: #f0f6fc;
-  --color-accent: #21262d;
-  --color-accent-foreground: #f0f6fc;
-  --color-destructive: #f85149;
-  --color-destructive-foreground: #f0f6fc;
-  --color-ring: #58a6ff;
-  --color-code-bg: #161b22;
-  --color-code-border: #30363d;
-  --color-blockquote-border: #30363d;
-  --color-table-header: #21262d;
-  --color-table-border: #30363d;
+  --color-background: #09090b;
+  --color-background-rgb: 9, 9, 11;
+  --color-foreground: #fafafa;
+  --color-muted: #a1a1aa;
+  --color-muted-foreground: #71717a;
+  --color-card: #18181b;
+  --color-card-foreground: #fafafa;
+  --color-popover: #18181b;
+  --color-popover-foreground: #fafafa;
+  --color-border: #27272a;
+  --color-input: #27272a;
+  --color-primary: #60a5fa;
+  --color-primary-foreground: #09090b;
+  --color-secondary: #27272a;
+  --color-secondary-foreground: #fafafa;
+  --color-accent: #27272a;
+  --color-accent-foreground: #fafafa;
+  --color-destructive: #f87171;
+  --color-destructive-foreground: #fafafa;
+  --color-ring: #60a5fa;
+  --color-code-bg: #18181b;
+  --color-code-border: #27272a;
+  --color-blockquote-border: #27272a;
+  --color-table-header: #27272a;
+  --color-table-border: #27272a;
   
   /* Dark shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
@@ -90,10 +92,10 @@ body {
   color: var(--color-primary-foreground);
 }
 
-/* 滚动条样式 */
+/* 滚动条样式 - 更现代的滚动条 */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -102,17 +104,27 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-muted);
-  border-radius: 4px;
+  border-radius: 100px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-muted-foreground);
 }
 
-/* Prism.js 代码高亮 - 参考GitHub Dark主题 */
+/* 隐藏滚动条但保持功能 */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Prism.js 代码高亮 - 更现代的代码高亮 */
 code[class*="language-"],
 pre[class*="language-"] {
-  color: #f0f6fc;
+  color: var(--color-foreground);
   background: none;
   font-family: var(--font-mono);
   font-size: 0.875em;
@@ -127,10 +139,10 @@ pre[class*="language-"] {
 }
 
 pre[class*="language-"] {
-  padding: 1rem;
-  margin: 1rem 0;
+  padding: 1.25rem;
+  margin: 1.5rem 0;
   overflow: auto;
-  border-radius: 8px;
+  border-radius: 0.5rem;
   background: var(--color-code-bg);
   border: 1px solid var(--color-code-border);
   box-shadow: var(--shadow-sm);
@@ -138,24 +150,24 @@ pre[class*="language-"] {
 
 :not(pre) > code[class*="language-"] {
   padding: 0.125rem 0.25rem;
-  border-radius: 4px;
+  border-radius: 0.25rem;
   white-space: normal;
   background: var(--color-code-bg);
   border: 1px solid var(--color-code-border);
   color: var(--color-foreground);
 }
 
-/* Token colors - GitHub Dark inspired */
+/* Token colors - 更现代的代码高亮颜色 */
 .token.comment,
 .token.prolog,
 .token.doctype,
 .token.cdata {
-  color: #8b949e;
+  color: var(--color-muted);
   font-style: italic;
 }
 
 .token.punctuation {
-  color: #f0f6fc;
+  color: var(--color-foreground);
 }
 
 .token.property,
@@ -165,7 +177,7 @@ pre[class*="language-"] {
 .token.constant,
 .token.symbol,
 .token.deleted {
-  color: #79c0ff;
+  color: #3b82f6;
 }
 
 .token.selector,
@@ -174,7 +186,7 @@ pre[class*="language-"] {
 .token.char,
 .token.builtin,
 .token.inserted {
-  color: #a5d6ff;
+  color: #10b981;
 }
 
 .token.operator,
@@ -183,24 +195,24 @@ pre[class*="language-"] {
 .language-css .token.string,
 .style .token.string,
 .token.variable {
-  color: #ff7b72;
+  color: #ef4444;
 }
 
 .token.atrule,
 .token.attr-value,
 .token.function,
 .token.class-name {
-  color: #d2a8ff;
+  color: #8b5cf6;
 }
 
 .token.keyword {
-  color: #ff7b72;
+  color: #ec4899;
   font-weight: bold;
 }
 
 .token.regex,
 .token.important {
-  color: #ffa657;
+  color: #f59e0b;
 }
 
 .token.important,
@@ -216,11 +228,11 @@ pre[class*="language-"] {
   cursor: help;
 }
 
-/* Typography - Prose样式优化 */
+/* Typography - 更现代的排版 */
 .prose {
   color: var(--color-foreground);
   max-width: none;
-  line-height: 1.7;
+  line-height: 1.75;
 }
 
 .prose h1,
@@ -230,9 +242,9 @@ pre[class*="language-"] {
 .prose h5,
 .prose h6 {
   color: var(--color-foreground);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.25;
-  margin-top: 2rem;
+  margin-top: 2.5rem;
   margin-bottom: 1rem;
   scroll-margin-top: 2rem;
 }
@@ -248,8 +260,7 @@ pre[class*="language-"] {
 .prose h2 {
   font-size: 1.875rem;
   border-bottom: 1px solid var(--color-border);
-  padding-bottom: 0.3rem;
-  margin-bottom: 1rem;
+  padding-bottom: 0.25rem;
 }
 
 .prose h3 {
@@ -495,33 +506,34 @@ pre[class*="language-"] {
 
 /* 自定义组件样式 */
 .card {
-  background: var(--color-card);
-  color: var(--color-card-foreground);
+  background-color: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease;
+  border-radius: 0.75rem;
+  transition: all 0.3s ease;
+  overflow: hidden;
 }
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
   border-color: var(--color-primary);
 }
 
 .button-primary {
-  background: var(--color-primary);
+  background-color: var(--color-primary);
   color: var(--color-primary-foreground);
-  border: 1px solid var(--color-primary);
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
 }
 
 .button-secondary {
-  background: var(--color-secondary);
+  background-color: var(--color-secondary);
   color: var(--color-secondary-foreground);
-  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
 }
 
-/* 动画效果 */
+/* 动画 */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -534,7 +546,7 @@ pre[class*="language-"] {
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.5s ease-out forwards;
 }
 
 /* 隐藏 Next.js 开发工具菜单 */
@@ -578,4 +590,25 @@ pre[class*="language-"] {
     border-left-color: #ddd;
     background: #f9f9f9;
   }
+}
+
+/* 实用工具类 */
+.text-primary {
+  color: var(--color-primary);
+}
+
+.bg-primary {
+  background-color: var(--color-primary);
+}
+
+.hover\:text-primary:hover {
+  color: var(--color-primary);
+}
+
+.hover\:bg-secondary:hover {
+  background-color: var(--color-secondary);
+}
+
+.bg-secondary {
+  background-color: var(--color-secondary);
 }
