@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import Header from '@/components/Header';
+import { useAnalytics } from '@/contexts/AnalyticsContext';
 
 interface Post {
   slug: string;
@@ -53,23 +54,17 @@ const TAG_MAPPING: Record<string, string> = {
   "人工智能": "人工智能"
 };
 
-// 生成随机的PV/UV数据
-const generateRandomStats = () => {
-  return {
-    pv: Math.floor(Math.random() * 200) + 1,
-    uv: Math.floor(Math.random() * 100) + 1
-  };
-};
-
 export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [selectedTag, setSelectedTag] = useState<string>('');
   const [allTags, setAllTags] = useState<string[]>([]);
-  const [pvuv, setPvuv] = useState<Record<string, { pv: number; uv: number }>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [showTagsMenu, setShowTagsMenu] = useState(false);
   const tagsMenuRef = useRef<HTMLDivElement>(null);
+  
+  // 使用共享的分析数据
+  const { analytics, incrementAnalytics } = useAnalytics();
 
   useEffect(() => {
     setIsLoading(true);
@@ -92,17 +87,17 @@ export default function Home() {
         setAllTags(Array.from(tagSet).sort());
         setIsLoading(false);
         
-        // 生成随机的初始PV/UV数据
-        const initialPvuv: Record<string, { pv: number; uv: number }> = {};
+        // 为所有文章初始化分析数据
         postsData.forEach((post: Post) => {
-          initialPvuv[post.slug] = generateRandomStats();
+          if (!analytics[post.slug]) {
+            incrementAnalytics(post.slug);
+          }
         });
-        setPvuv(initialPvuv);
       })
       .catch(() => {
         setIsLoading(false);
       });
-  }, []);
+  }, [incrementAnalytics, analytics]);
 
   // 点击外部关闭标签菜单
   useEffect(() => {
@@ -137,20 +132,6 @@ export default function Home() {
       ));
     }
   }, [selectedTag, posts]);
-
-  // 不再获取远程PV/UV数据，使用本地生成的随机数据
-  useEffect(() => {
-    if (posts.length === 0) return;
-    
-    // 已在初始化时设置随机数据
-    const initialPvuv = { ...pvuv };
-    Object.keys(initialPvuv).forEach(key => {
-      if (!initialPvuv[key]) {
-        initialPvuv[key] = generateRandomStats();
-      }
-    });
-    setPvuv(initialPvuv);
-  }, [posts]);
 
   const handleTagClick = (tag: string) => {
     setSelectedTag(selectedTag === tag ? '' : tag);
@@ -391,14 +372,14 @@ export default function Home() {
                           
                           <div className="flex justify-between items-center mt-auto pt-4">
                             <div className="flex items-center space-x-2">
-                              {/* PV、UV 数据展示 */}
+                              {/* PV、UV 数据展示 - 使用共享的分析数据 */}
                               <div className="flex items-center">
                                 <span className="flex items-center text-xs mr-3" style={{ color: 'var(--color-muted)' }}>
                                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                     <circle cx="12" cy="12" r="3"></circle>
                                   </svg>
-                                  {pvuv[post.slug]?.pv || 0}
+                                  {analytics[post.slug]?.pv || 0}
                                 </span>
                                 <span className="flex items-center text-xs" style={{ color: 'var(--color-muted)' }}>
                                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
@@ -407,7 +388,7 @@ export default function Home() {
                                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                                   </svg>
-                                  {pvuv[post.slug]?.uv || 0}
+                                  {analytics[post.slug]?.uv || 0}
                                 </span>
                               </div>
                             </div>

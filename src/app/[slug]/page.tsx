@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { remark } from 'remark';
 import html from 'remark-html';
@@ -7,6 +7,7 @@ import gfm from 'remark-gfm';
 import Prism from 'prismjs';
 import Header from '@/components/Header';
 import Link from 'next/link';
+import { useAnalytics } from '@/contexts/AnalyticsContext';
 
 // Import Prism languages
 import 'prismjs/components/prism-bash';
@@ -33,10 +34,14 @@ export default function PostPage() {
   const [contentHtml, setContentHtml] = useState('');
   const [notFound, setNotFound] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const { analytics, incrementAnalytics } = useAnalytics();
+  const [hasIncremented, setHasIncremented] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
     setIsLoading(true);
+    setHasIncremented(false);
+    
     fetch(`/api/posts?slug=${slug}`)
       .then(res => {
         if (!res.ok) throw new Error('not found');
@@ -61,6 +66,14 @@ export default function PostPage() {
         setIsLoading(false);
       });
   }, [slug]);
+
+  // 单独处理访问统计的逻辑
+  useEffect(() => {
+    if (slug && !isLoading && !notFound && !hasIncremented) {
+      incrementAnalytics(slug);
+      setHasIncremented(true);
+    }
+  }, [slug, isLoading, notFound, hasIncremented, incrementAnalytics]);
 
   // 格式化日期
   const formatDate = (dateString: string) => {
@@ -103,6 +116,9 @@ export default function PostPage() {
   );
 
   if (!post) return null;
+  
+  // 获取当前文章的PV和UV数据
+  const { pv = 0, uv = 0 } = analytics[slug] || {};
 
   return (
     <>
@@ -116,7 +132,25 @@ export default function PostPage() {
               <time className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
                 {formatDate(post.date)}
               </time>
-              <PVUV slug={slug} />
+              {/* 使用共享的PV/UV数据 */}
+              <div className="flex items-center gap-3 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                <span className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  阅读量: {pv}
+                </span>
+                <span className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                  访客数: {uv}
+                </span>
+              </div>
             </div>
             {post.description && (
               <p className="text-lg" style={{ color: 'var(--color-muted)' }}>{post.description}</p>
@@ -178,43 +212,5 @@ export default function PostPage() {
         </div>
       </footer>
     </>
-  );
-}
-
-function PVUV({ slug }: { slug: string }) {
-  const [pv, setPv] = useState(0);
-  const [uv, setUv] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (!slug) return;
-    setIsLoading(true);
-    fetch('/api/analytics', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug }),
-    }).then(() => {
-      fetch(`/api/analytics?slug=${slug}`)
-        .then(res => res.json())
-        .then(data => {
-          setPv(data.pv || 0);
-          setUv(data.uv || 0);
-          setIsLoading(false);
-        })
-        .catch(() => {
-          setIsLoading(false);
-        });
-    });
-  }, [slug]);
-
-  if (isLoading) {
-    return <span className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>加载中...</span>;
-  }
-
-  return (
-    <div className="flex items-center gap-3 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
-      <span>阅读量: {pv}</span>
-      <span>访客数: {uv}</span>
-    </div>
   );
 } 

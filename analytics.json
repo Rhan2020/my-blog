@@ -2,7 +2,9 @@
   "pv": {
     "simplify-project-architecture": 24,
     "nextjs-cicd-cache-dependency-issues": 2,
-    "nginx-proxy-troubleshooting": 4
+    "nginx-proxy-troubleshooting": 4,
+    "script-arbitrage-emerging-platforms-analysis": 2,
+    "script-arbitrage-ecommerce-detailed-analysis": 2
   },
   "uv": {
     "simplify-project-architecture": {
@@ -20,6 +22,16 @@
         "::1": true
       },
       "2025-06-12": {
+        "::1": true
+      }
+    },
+    "script-arbitrage-emerging-platforms-analysis": {
+      "2025-07-04": {
+        "::1": true
+      }
+    },
+    "script-arbitrage-ecommerce-detailed-analysis": {
+      "2025-07-04": {
         "::1": true
       }
     }

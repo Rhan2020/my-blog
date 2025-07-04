@@ -39,33 +39,33 @@
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
-/* Dark theme colors - 更现代的深色模式 */
+/* Dark theme colors - 深蓝配深灰的暗色主题 */
 .dark {
-  --color-background: #09090b;
-  --color-background-rgb: 9, 9, 11;
-  --color-foreground: #fafafa;
-  --color-muted: #a1a1aa;
-  --color-muted-foreground: #71717a;
-  --color-card: #18181b;
-  --color-card-foreground: #fafafa;
-  --color-popover: #18181b;
-  --color-popover-foreground: #fafafa;
-  --color-border: #27272a;
-  --color-input: #27272a;
+  --color-background: #1a2130;
+  --color-background-rgb: 26, 33, 48;
+  --color-foreground: #f0f4f8;
+  --color-muted: #a9b6c8;
+  --color-muted-foreground: #7a8ca0;
+  --color-card: #23293d;
+  --color-card-foreground: #f0f4f8;
+  --color-popover: #23293d;
+  --color-popover-foreground: #f0f4f8;
+  --color-border: #3a4254;
+  --color-input: #3a4254;
   --color-primary: #60a5fa;
   --color-primary-foreground: #09090b;
-  --color-secondary: #27272a;
-  --color-secondary-foreground: #fafafa;
-  --color-accent: #27272a;
-  --color-accent-foreground: #fafafa;
+  --color-secondary: #364156;
+  --color-secondary-foreground: #f0f4f8;
+  --color-accent: #364156;
+  --color-accent-foreground: #f0f4f8;
   --color-destructive: #f87171;
-  --color-destructive-foreground: #fafafa;
+  --color-destructive-foreground: #f0f4f8;
   --color-ring: #60a5fa;
-  --color-code-bg: #18181b;
-  --color-code-border: #27272a;
-  --color-blockquote-border: #27272a;
-  --color-table-header: #27272a;
-  --color-table-border: #27272a;
+  --color-code-bg: #23293d;
+  --color-code-border: #3a4254;
+  --color-blockquote-border: #3a4254;
+  --color-table-header: #364156;
+  --color-table-border: #3a4254;
   
   /* Dark shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
