@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { remark } from 'remark';
 import html from 'remark-html';
