@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -11,6 +17,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1  # 浅克隆，加快检出速度
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -21,35 +29,50 @@ jobs:
       - name: Cache node modules
         uses: actions/cache@v4
         with:
-          path: ~/.npm
+          path: |
+            ~/.npm
+            node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-
-      - name: Install dependencies (with cache)
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
 
       - name: Cache Next.js build
         uses: actions/cache@v4
         with:
           path: |
             ${{ github.workspace }}/.next/cache
+            ${{ github.workspace }}/.next/server
+            ${{ github.workspace }}/.next/static
           key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+            ${{ runner.os }}-nextjs-
 
-      - name: Build project
-        run: npm run build -- --no-lint
+      - name: Install dependencies (with cache)
+        run: |
+          export NODE_OPTIONS="--max-old-space-size=4096"
+          if [ -f package-lock.json ]; then
+            npm ci --prefer-offline --no-audit --progress=false
+          else
+            npm install --prefer-offline --no-audit --progress=false
+          fi
 
       - name: Generate package.json MD5
         run: |
           echo "PACKAGE_JSON_MD5=$(md5sum package.json | cut -d' ' -f1)" >> $GITHUB_ENV
           echo "Package.json MD5: $(md5sum package.json | cut -d' ' -f1)"
+
+      - name: Build project
+        run: |
+          export NODE_OPTIONS="--max-old-space-size=4096"
+          export NEXT_TELEMETRY_DISABLED=1
+          npm run build -- --no-lint
+
+      - name: Optimize build output
+        run: |
+          echo "Optimizing build output..."
+          # 删除不需要部署的文件
+          rm -rf .git .github node_modules/.cache
 
       - name: Copy files to server via rsync over SSH
         uses: burnett01/rsync-deployments@7.0.2
@@ -109,8 +132,9 @@ jobs:
               # 清理旧的依赖
               rm -rf node_modules package-lock.json 2>/dev/null || true
               
-              # 使用npm install进行全新安装
-              if npm install --production=false; then
+              # 使用npm install进行全新安装，优化安装速度
+              export NODE_OPTIONS="--max-old-space-size=4096"
+              if npm install --production=false --prefer-offline --no-audit --no-fund --progress=false; then
                 echo "依赖安装成功"
                 # 保存MD5到缓存文件
                 echo "$CURRENT_MD5" > "$CACHE_FILE"
@@ -144,6 +168,7 @@ jobs:
             
             # 强制构建，忽略 lint 错误
             export NODE_OPTIONS="--max-old-space-size=4096"
+            export NEXT_TELEMETRY_DISABLED=1
             if npm run build -- --no-lint; then
               echo "构建成功"
             else
@@ -286,3 +311,7 @@ jobs:
             if [ -f "$CACHE_FILE" ]; then
               echo "📦 当前依赖缓存MD5: $(cat $CACHE_FILE)"
             fi
+            
+            # 记录构建性能指标
+            echo "==== 记录构建性能指标 ===="
+            bash scripts/build-performance.sh || echo "性能记录脚本执行失败"

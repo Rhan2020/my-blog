@@ -3,8 +3,6 @@
 # 构建性能监控脚本
 # 用于追踪和分析构建时间、缓存命中率等性能指标
 
-set -e
-
 # 颜色定义
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -36,7 +34,7 @@ check_package_changes() {
     
     if [ -f "$CACHE_FILE" ]; then
         CACHED_MD5=$(cat "$CACHE_FILE")
-        CURRENT_MD5=$(md5sum package.json | cut -d' ' -f1)
+        CURRENT_MD5=$(md5sum package.json 2>/dev/null | cut -d' ' -f1)
         
         if [ "$CACHED_MD5" = "$CURRENT_MD5" ]; then
             echo -e "${GREEN}✅ package.json未变更，将跳过依赖安装${NC}"
@@ -59,7 +57,7 @@ check_node_modules() {
     echo -e "${YELLOW}📁 检查node_modules状态${NC}"
     
     if [ -d "node_modules" ]; then
-        MODULE_COUNT=$(find node_modules -name "package.json" | wc -l)
+        MODULE_COUNT=$(find node_modules -name "package.json" 2>/dev/null | wc -l)
         MODULE_SIZE=$(du -sh node_modules 2>/dev/null | cut -f1)
         echo -e "${GREEN}✅ node_modules存在: $MODULE_COUNT个包, 大小: $MODULE_SIZE${NC}"
         log_metric "NODE_MODULES_SIZE" "$MODULE_SIZE"
@@ -78,14 +76,14 @@ check_build_cache() {
     
     if [ -d ".next" ]; then
         CACHE_SIZE=$(du -sh .next 2>/dev/null | cut -f1)
-        CACHE_FILES=$(find .next -type f | wc -l)
+        CACHE_FILES=$(find .next -type f 2>/dev/null | wc -l)
         echo -e "${GREEN}✅ 构建缓存存在: $CACHE_FILES个文件, 大小: $CACHE_SIZE${NC}"
         log_metric "BUILD_CACHE_SIZE" "$CACHE_SIZE"
         log_metric "BUILD_CACHE_FILES" "$CACHE_FILES"
         
         # 检查缓存年龄
         if [ -f ".next/build-manifest.json" ]; then
-            CACHE_AGE=$(($(date +%s) - $(stat -c %Y .next/build-manifest.json)))
+            CACHE_AGE=$(($(date +%s) - $(stat -c %Y .next/build-manifest.json 2>/dev/null || echo $(date +%s))))
             echo -e "${BLUE}📅 缓存年龄: ${CACHE_AGE}秒${NC}"
             log_metric "BUILD_CACHE_AGE_SECONDS" "$CACHE_AGE"
         fi
@@ -165,23 +163,22 @@ generate_report() {
     # 显示最近5次构建的性能数据
     if [ -f "$PERF_LOG" ]; then
         echo -e "${BLUE}📈 最近构建性能趋势:${NC}"
-        echo "时间 | 总耗时 | 依赖安装 | 构建时间 | 包变更"
-        echo "---|---|---|---|---"
+        echo "时间 | 总耗时"
+        echo "---|---"
         
-        tail -n 20 "$PERF_LOG" | grep "TOTAL_TIME_SECONDS" | tail -n 5 | while read line; do
+        grep "TOTAL_TIME_SECONDS" "$PERF_LOG" 2>/dev/null | tail -n 5 | while read line; do
             BUILD_TIME=$(echo "$line" | grep -o '[0-9]\+$')
             BUILD_DATE=$(echo "$line" | cut -d']' -f1 | cut -d'[' -f2)
-            echo "$BUILD_DATE | ${BUILD_TIME}s | - | - | -"
+            echo "$BUILD_DATE | ${BUILD_TIME}s"
         done
     fi
 }
 
 # 清理性能日志（可选）
 cleanup_logs() {
-    if [ -f "$PERF_LOG" ] && [ $(wc -l < "$PERF_LOG") -gt 1000 ]; then
+    if [ -f "$PERF_LOG" ] && [ $(wc -l < "$PERF_LOG" 2>/dev/null || echo 0) -gt 1000 ]; then
         echo -e "${YELLOW}🧹 清理旧的性能日志${NC}"
-        tail -n 500 "$PERF_LOG" > "${PERF_LOG}.tmp"
-        mv "${PERF_LOG}.tmp" "$PERF_LOG"
+        tail -n 500 "$PERF_LOG" > "${PERF_LOG}.tmp" 2>/dev/null && mv "${PERF_LOG}.tmp" "$PERF_LOG" 2>/dev/null
         log_metric "LOG_CLEANED" "true"
     fi
 }
@@ -190,18 +187,15 @@ cleanup_logs() {
 main() {
     echo -e "${BLUE}=== 构建性能分析报告 ===${NC}"
     
-    check_node_modules
-    check_build_cache
-    monitor_install_time
-    monitor_build_time
+    check_node_modules || true
+    check_build_cache || true
+    check_package_changes || true
     generate_report
-    cleanup_logs
+    cleanup_logs || true
     
     echo -e "${GREEN}✅ 性能监控完成${NC}"
     echo -e "${BLUE}📋 详细日志: $PERF_LOG${NC}"
 }
 
 # 如果脚本被直接执行
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main "$@"
-fi 
+main "$@" 
