@@ -17,8 +17,6 @@ const nextConfig = {
     // 在生产构建时忽略 TypeScript 错误
     ignoreBuildErrors: true,
   },
-  // 优化构建性能
-  swcMinify: true, // 使用 SWC 压缩代码，速度更快
   // 减少构建输出大小
   compress: true,
   // 优化图片处理
@@ -34,8 +32,6 @@ const nextConfig = {
   experimental: {
     // 启用构建缓存
     optimizeCss: true,
-    // 优化字体加载
-    optimizeFonts: true,
   },
   // 优化页面加载
   poweredByHeader: false,
