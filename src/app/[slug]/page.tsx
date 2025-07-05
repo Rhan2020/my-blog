@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { remark } from 'remark';
 import html from 'remark-html';
@@ -9,7 +9,7 @@ import Header from '@/components/Header';
 import Link from 'next/link';
 import { useAnalytics } from '@/contexts/AnalyticsContext';
 
-// Import Prism languages
+// 预加载 Prism 语言包
 import 'prismjs/components/prism-bash';
 import 'prismjs/components/prism-nginx';
 import 'prismjs/components/prism-yaml';
@@ -19,6 +19,10 @@ import 'prismjs/components/prism-javascript';
 import 'prismjs/components/prism-jsx';
 import 'prismjs/components/prism-tsx';
 
+// 内存缓存，避免重复请求和处理
+const postCache = new Map();
+const htmlCache = new Map();
+
 interface PostDetail {
   title: string;
   description: string;
@@ -26,6 +30,22 @@ interface PostDetail {
   tags?: string[];
   content: string;
 }
+
+// 预处理 markdown 内容的函数
+const processMarkdown = async (content: string) => {
+  if (htmlCache.has(content)) {
+    return htmlCache.get(content);
+  }
+  
+  // 移除markdown内容中的第一个h1标题，避免重复显示
+  const contentWithoutH1 = content.replace(/^#\s+.*\n?/m, '');
+  const processed = await remark().use(gfm).use(html).process(contentWithoutH1);
+  const result = processed.toString();
+  
+  // 缓存结果
+  htmlCache.set(content, result);
+  return result;
+};
 
 export default function PostPage() {
   const params = useParams();
@@ -37,28 +57,61 @@ export default function PostPage() {
   const { analytics, incrementAnalytics } = useAnalytics();
   const [hasIncremented, setHasIncremented] = useState(false);
 
+  // 格式化日期的函数
+  const formatDate = useCallback((dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('zh-CN', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  }, []);
+
+  // 获取文章内容
   useEffect(() => {
     if (!slug) return;
+    
     setIsLoading(true);
     setHasIncremented(false);
     
+    // 检查缓存
+    if (postCache.has(slug)) {
+      const cachedPost = postCache.get(slug);
+      setPost(cachedPost);
+      
+      // 处理缓存的内容
+      processMarkdown(cachedPost.content)
+        .then(html => {
+          setContentHtml(html);
+          setIsLoading(false);
+        });
+      
+      return;
+    }
+    
+    // 没有缓存，从API获取
     fetch(`/api/posts?slug=${slug}`)
       .then(res => {
         if (!res.ok) throw new Error('not found');
         return res.json();
       })
       .then(async data => {
-        setPost({
+        const postData = {
           title: data.frontmatter.title,
           description: data.frontmatter.description,
           date: data.frontmatter.date,
           tags: data.frontmatter.tags,
           content: data.content,
-        });
-        // 移除markdown内容中的第一个h1标题，避免重复显示
-        const contentWithoutH1 = data.content.replace(/^#\s+.*\n?/m, '');
-        const processed = await remark().use(gfm).use(html).process(contentWithoutH1);
-        setContentHtml(processed.toString());
+        };
+        
+        // 保存到状态和缓存
+        setPost(postData);
+        postCache.set(slug, postData);
+        
+        // 处理并缓存HTML
+        const html = await processMarkdown(data.content);
+        setContentHtml(html);
         setIsLoading(false);
       })
       .catch(() => {
@@ -75,16 +128,23 @@ export default function PostPage() {
     }
   }, [slug, isLoading, notFound, hasIncremented, incrementAnalytics]);
 
-  // 格式化日期
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('zh-CN', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
+  // 应用语法高亮
+  useEffect(() => {
+    if (contentHtml) {
+      // 使用requestAnimationFrame确保DOM已更新
+      requestAnimationFrame(() => {
+        const codeBlocks = document.querySelectorAll('pre code');
+        codeBlocks.forEach((block) => {
+          Prism.highlightElement(block as Element);
+        });
+      });
+    }
+  }, [contentHtml]);
+
+  // 获取当前文章的PV和UV数据
+  const analyticsData = useMemo(() => {
+    return analytics[slug] || { pv: 0, uv: 0 };
+  }, [analytics, slug]);
 
   if (notFound) return (
     <>
@@ -117,9 +177,6 @@ export default function PostPage() {
 
   if (!post) return null;
   
-  // 获取当前文章的PV和UV数据
-  const { pv = 0, uv = 0 } = analytics[slug] || {};
-
   return (
     <>
       <Header />
@@ -139,7 +196,7 @@ export default function PostPage() {
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
-                  阅读量: {pv}
+                  阅读量: {analyticsData.pv}
                 </span>
                 <span className="flex items-center">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
@@ -148,7 +205,7 @@ export default function PostPage() {
                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                   </svg>
-                  访客数: {uv}
+                  访客数: {analyticsData.uv}
                 </span>
               </div>
             </div>
@@ -178,15 +235,6 @@ export default function PostPage() {
           <div
             className="prose max-w-none"
             dangerouslySetInnerHTML={{ __html: contentHtml }}
-            ref={(el) => {
-              if (el && contentHtml) {
-                // Apply syntax highlighting after content is rendered
-                const codeBlocks = el.querySelectorAll('pre code');
-                codeBlocks.forEach((block) => {
-                  Prism.highlightElement(block as Element);
-                });
-              }
-            }}
           />
           
           {/* 文章底部 */}

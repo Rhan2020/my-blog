@@ -1,8 +1,17 @@
 "use client";
 import Link from 'next/link';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import Header from '@/components/Header';
 import { useAnalytics } from '@/contexts/AnalyticsContext';
+
+// 内存缓存，避免重复请求
+const postsCache = {
+  data: null as Post[] | null,
+  timestamp: 0
+};
+
+// 缓存过期时间（5分钟）
+const CACHE_TTL = 5 * 60 * 1000;
 
 interface Post {
   slug: string;
@@ -78,14 +87,51 @@ export default function Home() {
   const tagsMenuRef = useRef<HTMLDivElement>(null);
   
   // 使用共享的分析数据
-  const { analytics, incrementAnalytics } = useAnalytics();
+  const { analytics, incrementAnalytics, isLoading: analyticsLoading } = useAnalytics();
 
+  // 格式化日期函数
+  const formatDate = useCallback((dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('zh-CN', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  }, []);
+
+  // 获取文章列表
   useEffect(() => {
+    // 检查缓存是否有效
+    const now = Date.now();
+    if (postsCache.data && now - postsCache.timestamp < CACHE_TTL) {
+      setPosts(postsCache.data);
+      setFilteredPosts(postsCache.data);
+      
+      // 提取标签并映射到主类别
+      const tagSet = new Set<string>();
+      postsCache.data.forEach((post: Post) => {
+        post.tags?.forEach(tag => {
+          // 将标签映射到主类别
+          const mainCategory = TAG_MAPPING[tag] || tag;
+          tagSet.add(mainCategory);
+        });
+      });
+      setAllTags(Array.from(tagSet).sort());
+      setIsLoading(false);
+      return;
+    }
+    
+    // 缓存无效，从API获取
     setIsLoading(true);
     fetch('/api/posts')
       .then(res => res.json())
       .then(data => {
         const postsData = data.posts || [];
+        
+        // 更新缓存
+        postsCache.data = postsData;
+        postsCache.timestamp = now;
+        
         setPosts(postsData);
         setFilteredPosts(postsData);
         
@@ -100,18 +146,23 @@ export default function Home() {
         });
         setAllTags(Array.from(tagSet).sort());
         setIsLoading(false);
-        
-        // 为所有文章初始化分析数据
-        postsData.forEach((post: Post) => {
-          if (!analytics[post.slug]) {
-            incrementAnalytics(post.slug);
-          }
-        });
       })
       .catch(() => {
         setIsLoading(false);
       });
-  }, [incrementAnalytics, analytics]);
+  }, []);
+
+  // 更新分析数据
+  useEffect(() => {
+    if (!analyticsLoading && posts.length > 0) {
+      // 只为没有分析数据的文章初始化数据
+      posts.forEach((post: Post) => {
+        if (!analytics[post.slug]) {
+          incrementAnalytics(post.slug);
+        }
+      });
+    }
+  }, [posts, analytics, analyticsLoading, incrementAnalytics]);
 
   // 点击外部关闭标签菜单
   useEffect(() => {
@@ -127,7 +178,7 @@ export default function Home() {
     };
   }, []);
 
-  // 标签过滤逻辑，适应新的标签映射系统
+  // 标签过滤逻辑，使用 useMemo 优化性能
   useEffect(() => {
     if (selectedTag === '') {
       setFilteredPosts(posts);
@@ -147,23 +198,13 @@ export default function Home() {
     }
   }, [selectedTag, posts]);
 
-  const handleTagClick = (tag: string) => {
+  const handleTagClick = useCallback((tag: string) => {
     setSelectedTag(selectedTag === tag ? '' : tag);
     setShowTagsMenu(false);
-  };
+  }, [selectedTag]);
 
-  // 格式化日期
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('zh-CN', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
-
-  // 获取标签对应的文章数
-  const getTagCount = (tag: string) => {
+  // 获取标签对应的文章数，使用 useMemo 优化性能
+  const getTagCount = useCallback((tag: string) => {
     // 查找所有映射到这个主类别的原始标签
     const relatedTags = Object.entries(TAG_MAPPING)
       .filter(([_, mainCategory]) => mainCategory === tag)
@@ -176,7 +217,15 @@ export default function Home() {
     return posts.filter(post => 
       post.tags?.some(postTag => relatedTags.includes(postTag) || TAG_MAPPING[postTag] === tag)
     ).length;
-  };
+  }, [posts]);
+
+  // 预加载文章内容
+  const preloadPost = useCallback((slug: string) => {
+    // 预加载文章内容
+    fetch(`/api/posts?slug=${slug}`).catch(() => {
+      // 忽略错误
+    });
+  }, []);
 
   return (
     <>
@@ -198,135 +247,77 @@ export default function Home() {
             <button 
               onClick={() => setShowTagsMenu(!showTagsMenu)}
               className="w-full px-4 py-3 flex justify-between items-center rounded-lg shadow-sm transition-all"
-              style={{ 
-                backgroundColor: 'var(--color-card)', 
-                color: 'var(--color-foreground)',
-                borderColor: 'var(--color-border)',
-                border: '1px solid var(--color-border)'
+              style={{
+                backgroundColor: 'var(--color-card)',
+                color: 'var(--color-foreground)'
               }}
             >
-              <span>{selectedTag || '选择标签'}</span>
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="16" 
-                height="16" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                className={`transition-transform ${showTagsMenu ? 'rotate-180' : ''}`}
-              >
-                <polyline points="6 9 12 15 18 9"></polyline>
+              <span>{selectedTag || '所有类别'}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m6 9 6 6 6-6"/>
               </svg>
             </button>
             
             {showTagsMenu && (
               <div 
-                className="absolute z-10 mt-1 w-full rounded-lg shadow-lg overflow-hidden"
-                style={{ backgroundColor: 'var(--color-card)' }}
+                className="absolute top-full left-0 right-0 mt-2 p-2 rounded-lg shadow-lg z-10"
+                style={{
+                  backgroundColor: 'var(--color-card)',
+                  color: 'var(--color-foreground)'
+                }}
               >
-                <div className="max-h-60 overflow-y-auto py-1">
+                <button
+                  onClick={() => handleTagClick('')}
+                  className={`w-full text-left px-3 py-2 rounded-md mb-1 ${selectedTag === '' ? 'font-bold' : ''}`}
+                  style={{
+                    backgroundColor: selectedTag === '' ? 'var(--color-accent-muted)' : 'transparent',
+                    color: selectedTag === '' ? 'var(--color-accent)' : 'var(--color-foreground)'
+                  }}
+                >
+                  所有类别 ({posts.length})
+                </button>
+                {allTags.map(tag => (
                   <button
-                    onClick={() => handleTagClick('')}
-                    className="w-full text-left px-4 py-2 transition-colors"
-                    style={{ 
-                      backgroundColor: selectedTag === '' ? 'var(--color-primary)' : 'transparent',
-                      color: selectedTag === '' ? 'white' : 'var(--color-muted)'
+                    key={tag}
+                    onClick={() => handleTagClick(tag)}
+                    className={`w-full text-left px-3 py-2 rounded-md mb-1 ${selectedTag === tag ? 'font-bold' : ''}`}
+                    style={{
+                      backgroundColor: selectedTag === tag ? 'var(--color-accent-muted)' : 'transparent',
+                      color: selectedTag === tag ? 'var(--color-accent)' : 'var(--color-foreground)'
                     }}
                   >
-                    全部 ({posts.length})
+                    {tag} ({getTagCount(tag)})
                   </button>
-                  {allTags.map(tag => (
-                    <button
-                      key={tag}
-                      onClick={() => handleTagClick(tag)}
-                      className="w-full text-left px-4 py-2 transition-colors"
-                      style={{ 
-                        backgroundColor: selectedTag === tag ? 'var(--color-primary)' : 'transparent',
-                        color: selectedTag === tag ? 'white' : 'var(--color-muted)'
-                      }}
-                    >
-                      {tag} ({getTagCount(tag)})
-                    </button>
-                  ))}
-                </div>
+                ))}
               </div>
             )}
           </div>
-
-          {/* 移动端水平标签滚动条 */}
-          <div className="md:hidden overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-            <div className="flex gap-2 whitespace-nowrap">
-              <button
-                onClick={() => setSelectedTag('')}
-                className={`px-3 py-1.5 rounded-full text-sm transition-all ${
-                  selectedTag === ''
-                    ? 'bg-primary text-white'
-                    : 'hover:bg-secondary'
-                }`}
-                style={selectedTag === '' ? {} : { 
-                  color: 'var(--color-muted)',
-                  backgroundColor: 'var(--color-secondary)',
-                  opacity: 0.8
-                }}
-              >
-                全部
-              </button>
-              {allTags.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => handleTagClick(tag)}
-                  className={`px-3 py-1.5 rounded-full text-sm transition-all ${
-                    selectedTag === tag
-                      ? 'bg-primary text-white'
-                      : 'hover:bg-secondary'
-                  }`}
-                  style={selectedTag === tag ? {} : { 
-                    color: 'var(--color-muted)',
-                    backgroundColor: 'var(--color-secondary)',
-                    opacity: 0.8
-                  }}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </div>
-
+          
+          {/* 桌面端标签侧边栏和文章列表 */}
           <div className="flex flex-col md:flex-row gap-8">
-            {/* 桌面端侧边栏 - 标签过滤器 */}
-            <aside className="hidden md:block md:w-64 shrink-0">
-              <div className="sticky top-24">
-                <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-foreground)' }}>
-                  标签分类
-                </h2>
+            {/* 桌面端标签侧边栏 */}
+            <div className="hidden md:block w-full md:w-64 shrink-0">
+              <div className="sticky top-8">
+                <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--color-foreground)' }}>分类</h2>
                 <div className="flex flex-col gap-2">
                   <button
-                    onClick={() => setSelectedTag('')}
-                    className={`px-3 py-1.5 rounded-full text-sm transition-all ${
-                      selectedTag === ''
-                        ? 'bg-primary text-white'
-                        : 'hover:bg-secondary'
-                    }`}
-                    style={selectedTag === '' ? {} : { 
-                      color: 'var(--color-muted)'
+                    onClick={() => handleTagClick('')}
+                    className={`text-left px-3 py-2 rounded-md transition-colors ${selectedTag === '' ? 'font-bold' : ''}`}
+                    style={{
+                      backgroundColor: selectedTag === '' ? 'var(--color-accent-muted)' : 'transparent',
+                      color: selectedTag === '' ? 'var(--color-accent)' : 'var(--color-foreground)'
                     }}
                   >
-                    全部 ({posts.length})
+                    所有类别 ({posts.length})
                   </button>
                   {allTags.map(tag => (
                     <button
                       key={tag}
                       onClick={() => handleTagClick(tag)}
-                      className={`px-3 py-1.5 rounded-full text-sm transition-all ${
-                        selectedTag === tag
-                          ? 'bg-primary text-white'
-                          : 'hover:bg-secondary'
-                      }`}
-                      style={selectedTag === tag ? {} : { 
-                        color: 'var(--color-muted)'
+                      className={`text-left px-3 py-2 rounded-md transition-colors ${selectedTag === tag ? 'font-bold' : ''}`}
+                      style={{
+                        backgroundColor: selectedTag === tag ? 'var(--color-accent-muted)' : 'transparent',
+                        color: selectedTag === tag ? 'var(--color-accent)' : 'var(--color-foreground)'
                       }}
                     >
                       {tag} ({getTagCount(tag)})
@@ -334,101 +325,80 @@ export default function Home() {
                   ))}
                 </div>
               </div>
-            </aside>
-
+            </div>
+            
             {/* 文章列表 */}
             <div className="flex-1">
               {isLoading ? (
-                <div className="flex justify-center items-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2" style={{ borderColor: 'var(--color-primary)' }}></div>
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2" style={{ borderColor: 'var(--color-primary)' }}></div>
                 </div>
-              ) : filteredPosts.length === 0 ? (
-                <div className="text-center py-12 rounded-lg border" style={{ 
-                  color: 'var(--color-muted)',
-                  borderColor: 'var(--color-border)',
-                  backgroundColor: 'var(--color-card)'
-                }}>
-                  {selectedTag ? `没有找到标签为 "${selectedTag}" 的文章` : '暂无文章'}
+              ) : filteredPosts.length > 0 ? (
+                <div className="grid gap-6">
+                  {filteredPosts.map((post) => {
+                    // 获取文章的PV和UV数据
+                    const { pv = 0, uv = 0 } = analytics[post.slug] || {};
+                    
+                    return (
+                      <Link 
+                        href={`/${post.slug}`} 
+                        key={post.slug}
+                        className="block p-6 rounded-lg transition-transform hover:-translate-y-1"
+                        style={{ backgroundColor: 'var(--color-card)' }}
+                        onMouseEnter={() => preloadPost(post.slug)}
+                      >
+                        <article>
+                          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-foreground)' }}>{post.title}</h2>
+                          <div className="flex items-center gap-4 mb-3">
+                            <time className="text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                              {formatDate(post.date)}
+                            </time>
+                            <div className="flex items-center gap-3 text-sm" style={{ color: 'var(--color-muted-foreground)' }}>
+                              <span className="flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                  <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                {pv}
+                              </span>
+                              <span className="flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                  <circle cx="9" cy="7" r="4"></circle>
+                                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                {uv}
+                              </span>
+                            </div>
+                          </div>
+                          {post.description && (
+                            <p className="mb-3" style={{ color: 'var(--color-muted)' }}>{post.description}</p>
+                          )}
+                          {post.tags && post.tags.length > 0 && (
+                            <div className="flex gap-2 flex-wrap">
+                              {post.tags.map(tag => (
+                                <span 
+                                  key={tag}
+                                  className="px-2 py-1 rounded-full text-xs"
+                                  style={{ 
+                                    backgroundColor: 'var(--color-secondary)', 
+                                    color: 'var(--color-muted)' 
+                                  }}
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </article>
+                      </Link>
+                    );
+                  })}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {filteredPosts.map(post => (
-                    <Link
-                      href={`/${post.slug}`}
-                      key={post.slug}
-                      className="group"
-                    >
-                      <article className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 h-full flex flex-col"
-                        style={{
-                          backgroundColor: 'var(--color-card)',
-                        }}
-                      >
-                        {/* 文章图片占位区域 - 随机图片 */}
-                        <div className="relative h-48 overflow-hidden">
-                          <img 
-                            src={`https://picsum.photos/800/600?random=${post.slug}`} 
-                            alt={post.title} 
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          />
-                          <div className="absolute top-4 left-4 bg-primary text-white text-xs font-medium px-3 py-1 rounded-full">
-                            {post.tags && post.tags[0] ? (TAG_MAPPING[post.tags[0]] || post.tags[0]) : '文章'}
-                          </div>
-                        </div>
-                        
-                        <div className="p-6 flex flex-col flex-grow">
-                          <h2 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors" style={{ color: 'var(--color-foreground)' }}>
-                            {post.title}
-                          </h2>
-                          
-                          <p className="text-muted mb-4 line-clamp-3" style={{ color: 'var(--color-muted)' }}>
-                            {post.description}
-                          </p>
-                          
-                          <div className="flex justify-between items-center mt-auto pt-4">
-                            <div className="flex items-center space-x-2">
-                              {/* PV、UV 数据展示 - 使用共享的分析数据 */}
-                              <div className="flex items-center">
-                                <span className="flex items-center text-xs mr-3" style={{ color: 'var(--color-muted)' }}>
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                  </svg>
-                                  {analytics[post.slug]?.pv || 0}
-                                </span>
-                                <span className="flex items-center text-xs" style={{ color: 'var(--color-muted)' }}>
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="9" cy="7" r="4"></circle>
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                  </svg>
-                                  {analytics[post.slug]?.uv || 0}
-                                </span>
-                              </div>
-                            </div>
-                            <span className="text-sm" style={{ color: 'var(--color-muted)' }}>
-                              <svg 
-                                xmlns="http://www.w3.org/2000/svg" 
-                                width="12" 
-                                height="12" 
-                                viewBox="0 0 24 24" 
-                                fill="none" 
-                                stroke="currentColor" 
-                                strokeWidth="2" 
-                                className="inline mr-1"
-                              >
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                              </svg>
-                              {formatDate(post.date)}
-                            </span>
-                          </div>
-                        </div>
-                      </article>
-                    </Link>
-                  ))}
+                <div className="text-center py-12">
+                  <p style={{ color: 'var(--color-muted)' }}>没有找到符合条件的文章</p>
                 </div>
               )}
             </div>
@@ -437,7 +407,7 @@ export default function Home() {
       </main>
       
       {/* 页脚 */}
-      <footer className="py-8 border-t mt-12" style={{ borderColor: 'var(--color-border)' }}>
+      <footer className="py-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
         <div className="max-w-5xl mx-auto px-4 text-center">
           <p style={{ color: 'var(--color-muted)' }}>© {new Date().getFullYear()} Rshan's Blog. 保留所有权利。</p>
         </div>
