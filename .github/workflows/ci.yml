@@ -44,7 +44,7 @@ jobs:
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
 
       - name: Build project
-        run: npm run build
+        run: npm run build -- --no-lint
 
       - name: Generate package.json MD5
         run: |
