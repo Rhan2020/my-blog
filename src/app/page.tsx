@@ -14,44 +14,58 @@ interface Post {
 
 // 定义标签映射关系，将相似标签映射到主类别
 const TAG_MAPPING: Record<string, string> = {
-  // 开发技术类
-  "Next.js": "前端开发",
-  "CI/CD": "DevOps",
-  "部署": "DevOps",
-  "缓存": "DevOps",
-  "DevOps": "DevOps",
-  "nginx": "服务器",
-  "https": "服务器",
-  "反向代理": "服务器",
-  "troubleshooting": "服务器",
-  "ssl": "服务器",
-  "cicd": "DevOps",
-  "pm2": "服务器",
-  "architecture": "架构",
+  // 技术开发类
+  "Next.js": "技术",
+  "CI/CD": "技术", 
+  "部署": "技术",
+  "缓存": "技术",
+  "DevOps": "技术",
+  "nginx": "技术",
+  "https": "技术",
+  "反向代理": "技术",
+  "troubleshooting": "技术",
+  "ssl": "技术",
+  "cicd": "技术",
+  "pm2": "技术",
+  "architecture": "技术",
+  "故障排除": "技术",
   
-  // 脚本套利类
-  "脚本套利": "数据套利",
-  "电商": "数据套利",
-  "二手": "数据套利",
-  "自动化": "自动化",
-  "社交媒体": "内容变现",
-  "流量变现": "内容变现",
-  "信息差": "数据套利",
-  "数据分析": "数据分析",
-  "智能化": "自动化",
-  "加密": "加密货币",
-  "量化": "数据分析",
-  "DeFi": "加密货币",
-  "算法交易": "数据分析",
-  "数字资产": "加密货币",
-  "NFT": "加密货币",
-  "区块链": "加密货币",
-  "虚拟商品": "数字资产",
-  "媒体": "内容变现",
-  "流量": "内容变现",
-  "内容变现": "内容变现",
-  "AI": "人工智能",
-  "人工智能": "人工智能"
+  // AI人工智能类
+  "AI": "AI",
+  "人工智能": "AI",
+  "机器学习": "AI",
+  "深度学习": "AI",
+  "自然语言处理": "AI",
+  "计算机视觉": "AI",
+  "智能化": "AI",
+  
+  // 商业分析类
+  "脚本套利": "商业",
+  "电商": "商业",
+  "二手": "商业", 
+  "自动化": "商业",
+  "社交媒体": "商业",
+  "流量变现": "商业",
+  "信息差": "商业",
+  "数据分析": "商业",
+  "量化": "商业",
+  "算法交易": "商业",
+  "媒体": "商业",
+  "流量": "商业",
+  "内容变现": "商业",
+  "服务外包": "商业",
+  "创业": "商业",
+  "entrepreneurship": "商业",
+  
+  // 加密货币类
+  "加密": "加密",
+  "DeFi": "加密",
+  "数字资产": "加密",
+  "NFT": "加密",
+  "区块链": "加密",
+  "虚拟商品": "加密",
+  "crypto": "加密",
+  "quant": "加密"
 };
 
 export default function Home() {
@@ -153,14 +167,14 @@ export default function Home() {
     // 查找所有映射到这个主类别的原始标签
     const relatedTags = Object.entries(TAG_MAPPING)
       .filter(([_, mainCategory]) => mainCategory === tag)
-      .map(([tag, _]) => tag);
+      .map(([originalTag, _]) => originalTag);
     
     // 添加主类别本身
     relatedTags.push(tag);
     
     // 计算包含相关标签的文章数
     return posts.filter(post => 
-      post.tags?.some(tag => relatedTags.includes(tag) || TAG_MAPPING[tag] === tag)
+      post.tags?.some(postTag => relatedTags.includes(postTag) || TAG_MAPPING[postTag] === tag)
     ).length;
   };
 

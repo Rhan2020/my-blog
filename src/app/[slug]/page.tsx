@@ -191,8 +191,15 @@ export default function PostPage() {
           
           {/* 文章底部 */}
           <div className="mt-12 pt-6 border-t" style={{ borderColor: 'var(--color-border)' }}>
-            <Link 
-              href="/" 
+            <button 
+              onClick={() => {
+                // 优先使用浏览器返回，如果没有历史记录则跳转到首页
+                if (window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  window.location.href = '/';
+                }
+              }}
               className="inline-flex items-center gap-2 text-sm transition-colors hover:text-primary"
               style={{ color: 'var(--color-muted)' }}
             >
@@ -200,7 +207,7 @@ export default function PostPage() {
                 <path d="m15 18-6-6 6-6"/>
               </svg>
               返回文章列表
-            </Link>
+            </button>
           </div>
         </article>
       </main>
